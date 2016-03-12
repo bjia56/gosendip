@@ -13,9 +13,23 @@ Packager: Mike Ricketts <mike@earth.li>
 BuildRoot: /var/tmp/sendip-root
 
 %description
-A command line tool to send arbitrary IP packets. It has a large number of command line options to specify the content of every header of a BGP, RIP, TCP, UDP, ICMP, or raw IPv4 or IPv6 packet.  It also allows any data to be added to the packet. Checksums can be calculated automatically, but if you wish to send out wrong checksums, that is supported too.
+A command line tool to send arbitrary IP packets. It has a large number of
+command line options to specify the content of every header of a NTP, BGP,
+RIP, RIPng, TCP, UDP, ICMP, or raw IPv4 or IPv6 packet.  It also allows any 
+data to be added to the packet.
 
 %changelog
+* Sat Oct 12 2002 Mike Ricketts <mike@earth.li>
+- Update to version 2.2
+- See CHANGES for a more complete list (there's even more than last time)
+
+* Sun Feb 24 2002 Calum Selkirk <cselkirk@panix.com>
+- changed /usr/share/man to %{_mandir} and added perl to edit Makefile 
+  to refect this
+- wrapped %discription to tw=78
+- rm buildroot before install
+- other minor tweeks
+
 * Sat Feb 23 2002  Mike Ricketts <mike@earth.li>
 - Update to version 2.1
 - See CHANGES for a more complete list (there's a *lot*)
@@ -59,10 +73,13 @@ A command line tool to send arbitrary IP packets. It has a large number of comma
 %build
 mkdir -p $RPM_BUILD_ROOT/usr/bin $RPM_BUILD_ROOT/usr/share/man/man1
 mkdir -p $RPM_BUILD_ROOT/usr/lib
-make PREFIX=/usr
+make PREFIX=/usr MANDIR=%{_mandir}/man1
 
 %install
-make PREFIX=$RPM_BUILD_ROOT/usr install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr/{bin,lib}
+mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
+make PREFIX=$RPM_BUILD_ROOT/usr MANDIR=$RPM_BUILD_ROOT%{_mandir}/man1 install
 
 %clean
 rm -fr $RPM_BUILD_ROOT

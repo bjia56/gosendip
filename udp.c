@@ -1,6 +1,9 @@
 /* udp.c - UDP code for sendip
  * Author: Mike Ricketts <mike@earth.li>
  * ChangeLog since 2.0 release:
+ * ChangeLog since 2.1 release:
+ * 16/04/2002: Only check one layer of enclosing headers for ip
+ * 16/04/2002: Add support for UDP over IPV6
  */
 
 #include <sys/types.h>
@@ -10,6 +13,7 @@
 #include "sendip_module.h"
 #include "udp.h"
 #include "ipv4.h"
+#include "ipv6.h"
 
 /* Character that identifies our options
  */
@@ -19,18 +23,55 @@ static void udpcsum(sendip_data *ip_hdr, sendip_data *udp_hdr,
 						  sendip_data *data) {
 	udp_header *udp = (udp_header *)udp_hdr->data;
 	ip_header  *ip  = (ip_header *)ip_hdr->data;
-	u_int8_t *tempbuf = malloc(12+udp_hdr->alloc_len+data->alloc_len);
+	u_int16_t *buf = malloc(12+udp_hdr->alloc_len+data->alloc_len);
+	u_int8_t *tempbuf = (u_int8_t *)buf;
 	udp->check=0;
+	if(tempbuf == NULL) {
+		fprintf(stderr,"Out of memory: UDP checksum not computed\n");
+		return;
+	}
+	/* Set up the pseudo header */
 	memcpy(tempbuf,&(ip->saddr),sizeof(u_int32_t));
 	memcpy(&(tempbuf[4]),&(ip->daddr),sizeof(u_int32_t));
 	tempbuf[8]=0;
 	tempbuf[9]=(u_int16_t)ip->protocol;
 	tempbuf[10]=(u_int16_t)((udp_hdr->alloc_len+data->alloc_len)&0xFF00)>>8;
 	tempbuf[11]=(u_int16_t)((udp_hdr->alloc_len+data->alloc_len)&0x00FF);
+	/* Copy the UDP header and data */
 	memcpy(tempbuf+12,udp_hdr->data,udp_hdr->alloc_len);
 	memcpy(tempbuf+12+udp_hdr->alloc_len,data->data,data->alloc_len);
-	udp->check = csum((u_int16_t *)tempbuf,
-							12+udp_hdr->alloc_len+data->alloc_len);
+	/* CheckSum it */
+	udp->check = csum(buf,12+udp_hdr->alloc_len+data->alloc_len);
+}
+
+static void udp6csum(sendip_data *ipv6_hdr, sendip_data *udp_hdr,
+							sendip_data *data) {
+	udp_header *udp = (udp_header *)udp_hdr->data;
+	ipv6_header  *ipv6  = (ipv6_header *)ipv6_hdr->data;
+	struct ipv6_pseudo_hdr phdr;
+
+	u_int16_t *buf = malloc(sizeof(phdr)+udp_hdr->alloc_len+data->alloc_len);
+	u_int8_t *tempbuf = (u_int8_t *)buf;
+	udp->check=0;
+	if(tempbuf == NULL) {
+		fprintf(stderr,"Out of memory: UDP checksum not computed\n");
+		return;
+	}
+
+	/* Set up the pseudo header */
+	memset(&phdr,0,sizeof(phdr));
+	memcpy(&phdr.source,&ipv6->ip6_src,sizeof(struct in6_addr));
+	memcpy(&phdr.destination,&ipv6->ip6_dst,sizeof(struct in6_addr));
+	phdr.ulp_length=IPPROTO_UDP;
+	
+	memcpy(tempbuf,&phdr,sizeof(phdr));
+
+	/* Copy the UDP header and data */
+	memcpy(tempbuf+sizeof(phdr),udp_hdr->data,udp_hdr->alloc_len);
+	memcpy(tempbuf+sizeof(phdr)+udp_hdr->alloc_len,data->data,data->alloc_len);
+
+	/* CheckSum it */
+	udp->check = csum(buf,sizeof(phdr)+udp_hdr->alloc_len+data->alloc_len);
 }
 
 sendip_data *initialize(void) {
@@ -69,8 +110,6 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
-	int num_hdrs = strlen(hdrs);
-	int i, foundit=0;
 	udp_header *udp = (udp_header *)pack->data;
 	
 	/* Set relevant fields */
@@ -79,15 +118,8 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	}
 
 	/* Find enclosing IP header and do the checksum */
-	/* TODO: Should only check one layer of enclosing header
-		Could also find IPV6 headers? */
-	for(i=num_hdrs;i>0;i--) {
-		if(hdrs[i-1]=='i') {
-			foundit=1; break;
-		}
-	}
-	if(foundit) {
-		i--;
+	if(hdrs[strlen(hdrs)-1]=='i') {
+		int i = strlen(hdrs)-1;
 		if(!(headers[i]->modified&IP_MOD_PROTOCOL)) {
 			((ip_header *)(headers[i]->data))->protocol=IPPROTO_UDP;
 			headers[i]->modified |= IP_MOD_PROTOCOL;
@@ -95,6 +127,16 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 		if(!(pack->modified&UDP_MOD_CHECK)) {
 			udpcsum(headers[i],pack,data);
 		}
+	} else if(hdrs[strlen(hdrs)-1]=='6') {
+		int i = strlen(hdrs)-1;
+		if(!(headers[i]->modified&IPV6_MOD_NXT)) {
+			((ipv6_header *)(headers[i]->data))->ip6_nxt=IPPROTO_UDP;
+			headers[i]->modified |= IPV6_MOD_NXT;
+		}
+		if(!(pack->modified&UDP_MOD_CHECK)) {
+			udp6csum(headers[i],pack,data);
+		}
+
 	} else {
 		if(!(pack->modified&UDP_MOD_CHECK)) {
 			usage_error("UDP checksum not defined when UDP is not embedded in IP\n");

@@ -6,6 +6,8 @@
  * 02/12/2001: Only check one layer of headers for enclosing ipv[46] header
  * 22/01/2002: Include string.h
  * 22/02/2002: Fix alignment problem in icmp*csum
+ * ChangeLog since 2.1 release:
+ * 16/04/2002: Move ipv6_pseudo_header into ipv6.h so tcp.c and udp.c can get it
  */
 
 #include <sys/types.h>
@@ -20,14 +22,6 @@
 /* Character that identifies our options
  */
 const char opt_char='c';
-
-struct ipv6_pseudo_hdr {
-	struct in6_addr source;
-	struct in6_addr destination;
-	u_int32_t ulp_length;
-	u_int32_t  zero: 24,
-		nexthdr:  8;
-};
 
 static void icmpcsum(sendip_data *icmp_hdr, sendip_data *data) {
 	icmp_header *icp = (icmp_header *)icmp_hdr->data;

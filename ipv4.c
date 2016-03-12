@@ -3,6 +3,7 @@
  * ChangeLog from 2.0 release:
  * 26/11/2001 IP options
  * 23/01/2002 Spelling fix (Dax Kelson <dax@gurulabs.com>)
+ * 26/08/2002 Put tot_len field in host byte order on FreeBSD
  */
 
 #include <sys/types.h>
@@ -137,7 +138,11 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		pack->modified |= IP_MOD_TOS;
 		break;
 	case 'l':
+#ifdef __FreeBSD
+		iph->tot_len = /*htons*/((u_int16_t)strtoul(arg, (char **)NULL, 0));
+#else
 		iph->tot_len = htons((u_int16_t)strtoul(arg, (char **)NULL, 0));
+#endif
 		pack->modified |= IP_MOD_TOTLEN;
 		break;
 	case 'i':
@@ -417,7 +422,11 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 		iph->header_len=(pack->alloc_len+3)/4;
 	}
 	if(!(pack->modified & IP_MOD_TOTLEN)) {
+#ifdef __FreeBSD
+		iph->tot_len=/*htons*/(pack->alloc_len + data->alloc_len);
+#else
 		iph->tot_len=htons(pack->alloc_len + data->alloc_len);
+#endif
 	}
 	if(!(pack->modified & IP_MOD_ID)) {
 		iph->id = rand();

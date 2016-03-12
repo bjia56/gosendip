@@ -28,6 +28,10 @@ Part of Project Purple. (http://www.earth.li/projectpurple/)
    *     NTP
    * IPv6 (except on solaris)
    *   ICMPv6
+   *   TCP
+   *   UDP
+   *     RIPng
+   *     NTP?
 
    Other protocols will be added in future versions, as and when I have time
    to add them.

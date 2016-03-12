@@ -1,25 +1,30 @@
 #configureable stuff
-PREFIX=/usr/local
-BINDIR=$(PREFIX)/bin
-MANDIR=$(PREFIX)/share/man/man1
-LIBDIR=$(PREFIX)/lib/sendip
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
+MANDIR ?= $(PREFIX)/share/man/man1
+LIBDIR ?= $(PREFIX)/lib/sendip
 #For most systems, this works
-INSTALL=install
+INSTALL ?= install
 #For Solaris, you may need
 #INSTALL=/usr/ucb/install
 
-CFLAGS=	-fPIC -pipe -Wall -Wpointer-arith -Wwrite-strings \
-			-Wstrict-prototypes -Wnested-externs -Winline -Werror -g \
+CFLAGS=	-fPIC -fsigned-char -pipe -Wall -Wpointer-arith -Wwrite-strings \
+			-Wstrict-prototypes -Wnested-externs -Winline -Werror -g -Wcast-align \
 			-DSENDIP_LIBS=\"$(LIBDIR)\"
 #-Wcast-align causes problems on solaris, but not serious ones
 LDFLAGS=	-g -rdynamic -lm
-LDFLAGS_SOLARIS= -g -lsocket -lnsl -lm
+#LDFLAGS_SOLARIS= -g -lsocket -lnsl -lm
+LDFLAGS_SOLARIS= -g -lsocket -lnsl -lm -ldl
 LDFLAGS_LINUX= -g  -rdynamic -ldl -lm
 LIBCFLAGS= -shared
 CC=	gcc
 
 PROGS= sendip
-PROTOS= ipv4.so ipv6.so icmp.so tcp.so udp.so rip.so bgp.so ntp.so #dns.so
+BASEPROTOS= ipv4.so ipv6.so
+IPPROTOS= icmp.so tcp.so udp.so
+UDPPROTOS= rip.so ripng.so ntp.so
+TCPPROTOS= bgp.so
+PROTOS= $(BASEPROTOS) $(IPPROTOS) $(UDPPROTOS) $(TCPPROTOS)
 GLOBALOBJS= csum.o compact.o
 
 all:	$(GLOBALOBJS) sendip $(PROTOS) sendip.1 sendip.spec

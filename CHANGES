@@ -87,3 +87,28 @@ Changes between sendip-2.0 and sendip-2.1
 * icmp.so:
 - only checks a single layer of enclosing headers for IPV4/IPV6
 - now compiles on platforms which care about alignment
+
+Changes between sendip-2.1 and sendip-2.2
+* spec file fixes (Calum Selkirk <cselkirk@panix.com>)
+* FreeBSD compile fixes
+* Linux-PPC compile fixes
+* More SunOS compile fixes
+* Use ?= not = in Makefile to allow FreeBSD ports to work without a hack
+  (Joseph Scott <joseph.scott@owp.csus.edu>) 
+* Added support for RIPng over UDP/IPv6.  Completely untested, I haven't even
+  read the spec... Requested by armite <armite@163.com>
+* CheckSum code tidied up
+* tcp.so:
+- now supports sending TCP over IPv6
+- tcp length correctly calculated (pointed out by
+  Yuchung Cheng <ycheng@cs.ucsd.edu>)
+* udp.so:
+- now supports sending UDP over IPv6
+- only checks a single layer of enclosing headers for IP
+* ipv6.so:
+- now correctly sets src and dst fields (Pekka Savola <pekkas@netcore.fi>)
+* ipv4.so:
+- ip_len now in host byte order on FreeBSD to avoid sendto: Invalid argument
+* rip.so:
+- off-by-one error causing segfaults and other badness fixed
+- hton* added where needed

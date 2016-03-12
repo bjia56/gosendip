@@ -4,6 +4,10 @@
  * ChangeLog since 2.0 release:
  * 27/11/2001: Added -tonum option
  * 02/12/2001: Only check 1 layer for enclosing IPV4 header
+ * ChangeLog since 2.1 release:
+ * 16/04/2002: Tidy up checksum code (like in icmp.c)
+ * 16/04/2002: Add support for TCP over IPV6 (code from armite <armite@163.com>)
+ * 26/08/2002: Fix bug where tcp length was wrong with tcp options
  */
 
 #include <sys/types.h>
@@ -13,6 +17,7 @@
 #include "sendip_module.h"
 #include "tcp.h"
 #include "ipv4.h"
+#include "ipv6.h"
 
 /* Character that identifies our options
  */
@@ -22,18 +27,55 @@ static void tcpcsum(sendip_data *ip_hdr, sendip_data *tcp_hdr,
 						  sendip_data *data) {
 	tcp_header *tcp = (tcp_header *)tcp_hdr->data;
 	ip_header  *ip  = (ip_header *)ip_hdr->data;
-	u_int8_t *tempbuf = malloc(12+tcp_hdr->alloc_len+data->alloc_len);
+	u_int16_t *buf = malloc(12+tcp_hdr->alloc_len+data->alloc_len);
+	u_int8_t *tempbuf = (u_int8_t *)buf;
 	tcp->check=0;
+	if(tempbuf == NULL) {
+		fprintf(stderr,"Out of memory: TCP checksum not computed\n");
+		return;
+	}
+	/* Set up the pseudo header */
 	memcpy(tempbuf,&(ip->saddr),sizeof(u_int32_t));
 	memcpy(&(tempbuf[4]),&(ip->daddr),sizeof(u_int32_t));
 	tempbuf[8]=0;
 	tempbuf[9]=(u_int16_t)ip->protocol;
 	tempbuf[10]=(u_int16_t)((tcp_hdr->alloc_len+data->alloc_len)&0xFF00)>>8;
 	tempbuf[11]=(u_int16_t)((tcp_hdr->alloc_len+data->alloc_len)&0x00FF);
+	/* Copy the TCP header and data */
 	memcpy(tempbuf+12,tcp_hdr->data,tcp_hdr->alloc_len);
 	memcpy(tempbuf+12+tcp_hdr->alloc_len,data->data,data->alloc_len);
-	tcp->check = csum((u_int16_t *)tempbuf,
-							12+tcp_hdr->alloc_len+data->alloc_len);
+	/* CheckSum it */
+	tcp->check = csum(buf,12+tcp_hdr->alloc_len+data->alloc_len);
+}
+
+static void tcp6csum(sendip_data *ipv6_hdr, sendip_data *tcp_hdr,
+							sendip_data *data) {
+	tcp_header *tcp = (tcp_header *)tcp_hdr->data;
+	ipv6_header  *ipv6  = (ipv6_header *)ipv6_hdr->data;
+	struct ipv6_pseudo_hdr phdr;
+
+	u_int16_t *buf = malloc(sizeof(phdr)+tcp_hdr->alloc_len+data->alloc_len);
+	u_int8_t *tempbuf = (u_int8_t *)buf;
+	tcp->check=0;
+	if(tempbuf == NULL) {
+		fprintf(stderr,"Out of memory: TCP checksum not computed\n");
+		return;
+	}
+
+	/* Set up the pseudo header */
+	memset(&phdr,0,sizeof(phdr));
+	memcpy(&phdr.source,&ipv6->ip6_src,sizeof(struct in6_addr));
+	memcpy(&phdr.destination,&ipv6->ip6_dst,sizeof(struct in6_addr));
+	phdr.ulp_length=IPPROTO_TCP;
+	
+	memcpy(tempbuf,&phdr,sizeof(phdr));
+
+	/* Copy the TCP header and data */
+	memcpy(tempbuf+sizeof(phdr),tcp_hdr->data,tcp_hdr->alloc_len);
+	memcpy(tempbuf+sizeof(phdr)+tcp_hdr->alloc_len,data->data,data->alloc_len);
+
+	/* CheckSum it */
+	tcp->check = csum(buf,sizeof(phdr)+tcp_hdr->alloc_len+data->alloc_len);
 }
 
 static void addoption(u_int8_t opt, u_int8_t len, u_int8_t *data,
@@ -269,7 +311,7 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 		tcp->seq = (u_int32_t)rand();
 	}
 	if(!(pack->modified&TCP_MOD_OFF)) {
-		tcp->off = htons((u_int16_t)(pack->alloc_len+3)/4);
+		tcp->off = (u_int16_t)((pack->alloc_len+3)/4) & 0x0F;
 	}
 	if(!(pack->modified&TCP_MOD_SYN)) {
 		tcp->syn=1;
@@ -288,9 +330,18 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 		if(!(pack->modified&TCP_MOD_CHECK)) {
 			tcpcsum(headers[i],pack,data);
 		}
+	} else if(hdrs[strlen(hdrs)-1]=='6') {
+		int i = strlen(hdrs)-1;
+		if(!(headers[i]->modified&IPV6_MOD_NXT)) {
+			((ipv6_header *)(headers[i]->data))->ip6_nxt=IPPROTO_TCP;
+			headers[i]->modified |= IPV6_MOD_NXT;
+		}
+		if(!(pack->modified&TCP_MOD_CHECK)) {
+			tcp6csum(headers[i],pack,data);
+		}
 	} else {
 		if(!(pack->modified&TCP_MOD_CHECK)) {
-			usage_error("TCP checksum not defined when TCP is not embedded in IPV4\n");
+			usage_error("TCP checksum not defined when TCP is not embedded in IP\n");
 			return FALSE;
 		}
 	}

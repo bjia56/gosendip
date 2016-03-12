@@ -1,6 +1,7 @@
 /* ipv6.c - sendip IPv6 code
  * Taken from code by Antti Tuominen <ajtuomin@tml.hut.fi>
  * ChangeLog since 2.0 release:
+ * 09/08/2002 Setting src/dst now works (Pekka Savola <pekkas@netcore.fi>)
  */
 
 #include <sys/types.h>
@@ -30,13 +31,17 @@ sendip_data *initialize(void) {
 bool set_addr(char *hostname, sendip_data *pack) {
 	ipv6_header *ipv6 = (ipv6_header *)pack->data;
 	struct hostent *host = gethostbyname2(hostname,AF_INET6);
-	ipv6->ip6_src = in6addr_loopback;
-	if(host==NULL) return FALSE;
-	if(host->h_length != sizeof(ipv6->ip6_dst)) {
-		fprintf(stderr,"IPV6 destination address is the wrong size!!!");
-		return FALSE;
+	if(!(pack->modified & IPV6_MOD_SRC)) {
+		ipv6->ip6_src = in6addr_loopback;
 	}
-	memcpy(&(ipv6->ip6_dst),host->h_addr,host->h_length);
+	if(!(pack->modified & IPV6_MOD_DST)) {
+		if(host==NULL) return FALSE;
+		if(host->h_length != sizeof(ipv6->ip6_dst)) {
+			fprintf(stderr,"IPV6 destination address is the wrong size!!!");
+			return FALSE;
+		}
+		memcpy(&(ipv6->ip6_dst),host->h_addr,host->h_length);
+	}
 	return TRUE;
 }
 

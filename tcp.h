@@ -86,14 +86,14 @@ sendip_option tcp_opts[] = {
 	{"ff",1,"TCP FIN bit","0 (options are 0,1,r)"},
 	{"w",1,"TCP window size","65535"},
 	{"c",1,"TCP checksum","Correct"},
-
+	{"u",1,"TCP urgent pointer","0"},
 	{"onum",1,"TCP option as string of hex bytes (length is always correct)","(no options)"},
 	{"oeol",0,"TCP option: end of list", NULL },
 	{"onop",0,"TCP option: no op", NULL },
 	{"omss",1,"TCP option: maximum segment size", NULL },
-	{"owscale",1,"TCP option: window scale", NULL },
-	{"osackok",0,"TCP option: allow selective ack (rfc1323)", NULL },
-	{"osack",1,"TCP option: selective ack (rfc1323), format is l_edge1:r_edge1,l_edge2:r_edge2...", NULL },
+	{"owscale",1,"TCP option: window scale (rfc1323)", NULL },
+	{"osackok",0,"TCP option: allow selective ack (rfc2018)", NULL },
+	{"osack",1,"TCP option: selective ack (rfc2018), format is l_edge1:r_edge1,l_edge2:r_edge2...", NULL },
 	{"ots",1,"TCP option: timestamp (rfc1323), format is tsval:tsecr", NULL }
 };
 

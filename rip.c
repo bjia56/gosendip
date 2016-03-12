@@ -2,6 +2,8 @@
  * Taken from code by Richard Polton <Richard.Polton@msdw.com>
  * ChangeLog since 2.0 release:
  * 02/12/2001: Only check 1 layer for enclosing UDP header
+ * 21/08/2002: Off-by-one fix in -re handling that caused bad things to happen
+ * 21/08/2002: htons() and htonl() added where needed
  */
 
 #include <stdlib.h>
@@ -46,7 +48,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		}
 		pack->modified |= RIP_IS_AUTH;
 		pack->data = realloc(pack->data,pack->alloc_len+strlen(arg));
-		strcpy((u_int8_t *)(pack->data)+pack->alloc_len,arg);
+		strcpy(pack->data+pack->alloc_len,arg);
 		pack->alloc_len += strlen(arg);
 		break;
 	case 'e': /* rip entry */
@@ -57,20 +59,20 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		ripopt = RIP_OPTION(pack);
 		p=q=arg;
 		/* TODO: if arg is malformed, this could segfault */
-		while(*(q++)!=':') /* do nothing */; *q='\0';
-		rippack->addressFamily= (p==q)?2:(u_int16_t)strtoul(p, (char **)0, 0);
+		while(*(q++)!=':') /* do nothing */; *(--q)='\0';
+		rippack->addressFamily= htons((p==q)?2:(u_int16_t)strtoul(p, (char **)0, 0));
 		pack->modified |= RIP_MOD_ADDRFAM;
-		p=++q; while(*(q++)!=':') /* do nothing */; *q='\0';
-		rippack->routeTagOrAuthenticationType=(p==q)?0:(u_int16_t)strtoul(p, (char **)0,0);
+		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
+		rippack->routeTagOrAuthenticationType=htons((p==q)?0:(u_int16_t)strtoul(p, (char **)0,0));
 		pack->modified |= RIP_MOD_ROUTETAG;
-		p=++q; while(*(q++)!=':') /* do nothing */; *q='\0';
+		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
 		ripopt->address=(p==q)?inet_addr("0.0.0.0"):inet_addr(p);
-		p=++q; while(*(q++)!=':') /* do nothing */; *q='\0';
+		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
 		ripopt->subnetMask=(p==q)?inet_addr("255.255.255.0"):inet_addr(p);
-		p=++q; while(*(q++)!=':') /* do nothing */; *q='\0';
+		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
 		ripopt->nextHop=(p==q)?inet_addr("0.0.0.0"):inet_addr(p);
-		p=++q; while(*(q++)!='\0') /* do nothing */; *q='\0';
-		ripopt->metric=(p==q)?16:(u_int32_t)strtoul(p,(char **)0, 0);
+		p=++q; while(*(q++)!='\0') /* do nothing */; *(--q)='\0';
+		ripopt->metric=htonl((p==q)?16:(u_int32_t)strtoul(p,(char **)0, 0));
 		break;
 	case 'd': /* default request */
 		if(RIP_NUM_ENTRIES(pack) != 0) {
@@ -84,7 +86,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		ripopt->address=inet_addr("0.0.0.0");
 		ripopt->subnetMask=inet_addr("0.0.0.0");
 		ripopt->nextHop=inet_addr("0.0.0.0");
-		ripopt->metric=(u_int16_t)16;
+		ripopt->metric=htons((u_int16_t)16);
 		break;
 	}
 	return TRUE;

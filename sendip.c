@@ -6,6 +6,7 @@
  * 27/11/2001 compact_string() moved to compact.c
  * 27/11/2001 change search path for libs to include <foo>.so
  * 23/01/2002 make random fields more random (Bryan Croft <bryan@gurulabs.com>)
+ * 10/08/2002 detect attempt to use multiple -d and -f options
  */
 
 #define _SENDIP_MAIN
@@ -146,8 +147,8 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 
 		int optlen = iphdr->header_len*4-20;
 
-		printf("Solaris EVILNESS workaround enabled for %d IP option bytes\n",
-				 optlen);
+		if(verbose) 
+			printf("Solaris workaround enabled for %d IP option bytes\n", optlen);
 
 		iphdr->tot_len = htons(ntohs(iphdr->tot_len)-optlen);
 
@@ -358,34 +359,44 @@ int main(int argc, char *const argv[]) {
 			verbosity=TRUE;
 			break;
 		case 'd':
-			data=gnuoptarg;
-			datalen = compact_string(data);
+			if(data == NULL) {
+				data=gnuoptarg;
+				datalen = compact_string(data);
+			} else {
+				fprintf(stderr,"Only one -d or -f option can be given\n");
+				usage = TRUE;
+			}
 			break;
 		case 'h':
 			usage=TRUE;
 			break;
 		case 'f':
-			datafile=open(gnuoptarg,O_RDONLY);
-			if(datafile == -1) {
-				perror("Couldn't open data file");
-				fprintf(stderr,"No data will be included\n");
-			} else {
-				datalen = lseek(datafile,0,SEEK_END);
-				if(datalen == -1) {
-					perror("Error reading data file: lseek()");
+			if(data == NULL) {
+				datafile=open(gnuoptarg,O_RDONLY);
+				if(datafile == -1) {
+					perror("Couldn't open data file");
 					fprintf(stderr,"No data will be included\n");
-					datalen=0;
-				} else if(datalen == 0) {
-					fprintf(stderr,"Data file is empty\nNo data will be included\n");
 				} else {
-					data = mmap(NULL,datalen,PROT_READ,MAP_SHARED,datafile,0);
-					if(data == MAP_FAILED) {
-						perror("Couldn't read data file: mmap()");
+					datalen = lseek(datafile,0,SEEK_END);
+					if(datalen == -1) {
+						perror("Error reading data file: lseek()");
 						fprintf(stderr,"No data will be included\n");
-						data = NULL;
 						datalen=0;
+					} else if(datalen == 0) {
+						fprintf(stderr,"Data file is empty\nNo data will be included\n");
+					} else {
+						data = mmap(NULL,datalen,PROT_READ,MAP_SHARED,datafile,0);
+						if(data == MAP_FAILED) {
+							perror("Couldn't read data file: mmap()");
+							fprintf(stderr,"No data will be included\n");
+							data = NULL;
+							datalen=0;
+						}
 					}
 				}
+			} else {
+				fprintf(stderr,"Only one -d or -f option can be given\n");
+				usage = TRUE;
 			}
 			break;
 		case '?':

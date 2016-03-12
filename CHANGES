@@ -124,3 +124,9 @@ Changes between sendip-2.3 and sendip-2.4
 - fix bug with iossr and iolsr adding wrong ip options
 - ip_len really is now in host byte order on FreeBSD, so the sendto: Invalid
   argument thing really is fixed now.  I hope.  (brdraney@nersc.gov)
+
+Changes between sendip-2.4 and sendip-2.5
+* Fix minor memory leaks in several places (found using valgrind)
+* Fix compile bug on Solaris (found by Dave Gibelli <dgibelli@tiscali.co.uk>)
+* tcp.so
+- Fix -tonum bug found by Yaniv Kaul <ykaul@checkpoint.com>

@@ -4,6 +4,8 @@
  * ChangeLog since 2.1 release:
  * 16/04/2002: Only check one layer of enclosing headers for ip
  * 16/04/2002: Add support for UDP over IPV6
+ * ChangeLog since 2.4 release:
+ * 21/04/2003: Fix errors found by valgrind
  */
 
 #include <sys/types.h>
@@ -42,6 +44,7 @@ static void udpcsum(sendip_data *ip_hdr, sendip_data *udp_hdr,
 	memcpy(tempbuf+12+udp_hdr->alloc_len,data->data,data->alloc_len);
 	/* CheckSum it */
 	udp->check = csum(buf,12+udp_hdr->alloc_len+data->alloc_len);
+	free(buf);
 }
 
 static void udp6csum(sendip_data *ipv6_hdr, sendip_data *udp_hdr,
@@ -72,6 +75,7 @@ static void udp6csum(sendip_data *ipv6_hdr, sendip_data *udp_hdr,
 
 	/* CheckSum it */
 	udp->check = csum(buf,sizeof(phdr)+udp_hdr->alloc_len+data->alloc_len);
+	free(buf);
 }
 
 sendip_data *initialize(void) {

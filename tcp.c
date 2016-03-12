@@ -10,6 +10,9 @@
  * 26/08/2002: Fix bug where tcp length was wrong with tcp options
  * ChangeLog since 2.2 release:
  * 24/11/2002: made it compile on archs that care about alignment
+ * ChangeLog since 2.4 release:
+ * 21/04/2003: fix errors found by valgrind
+ * 10/06/2003: fix -tonum (pointed out by Yaniv Kaul <ykaul@checkpoint.com>)
  */
 
 #include <sys/types.h>
@@ -48,6 +51,7 @@ static void tcpcsum(sendip_data *ip_hdr, sendip_data *tcp_hdr,
 	memcpy(tempbuf+12+tcp_hdr->alloc_len,data->data,data->alloc_len);
 	/* CheckSum it */
 	tcp->check = csum(buf,12+tcp_hdr->alloc_len+data->alloc_len);
+	free(buf);
 }
 
 static void tcp6csum(sendip_data *ipv6_hdr, sendip_data *tcp_hdr,
@@ -78,6 +82,7 @@ static void tcp6csum(sendip_data *ipv6_hdr, sendip_data *tcp_hdr,
 
 	/* CheckSum it */
 	tcp->check = csum(buf,sizeof(phdr)+tcp_hdr->alloc_len+data->alloc_len);
+	free(buf);
 }
 
 static void addoption(u_int8_t opt, u_int8_t len, u_int8_t *data,
@@ -201,7 +206,10 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			}
 			sprintf(data,"0x%s",arg);
 			len = compact_string(data);
-			addoption(*data,len-1,data+1,pack);
+			if(len==1)
+				addoption(*data,1,NULL,pack);
+			else
+				addoption(*data,len+1,data+1,pack);
 			free(data);
 		} else if (!strcmp(opt+2, "eol")) {
 			/* End of options list RFC 793 kind 0, no length */

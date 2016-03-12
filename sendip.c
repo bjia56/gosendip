@@ -11,6 +11,9 @@
  * 24/11/2002 compile on archs requiring alignment
  * ChangeLog since 2.3 release:
  * 21/04/2003 random data (Anand (Andy) Rao <andyrao@nortelnetworks.com>)
+ * ChangeLog since 2.4 release:
+ * 21/04/2003 fix errors detected by valgrind
+ * 28/07/2003 fix compile error on solaris
  */
 
 #define _SENDIP_MAIN
@@ -89,12 +92,17 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 
 	int sent;                         /* number of bytes sent */
 
+	if(to==NULL) {
+		perror("OUT OF MEMORY!\n");
+		return -3;
+	}
 	memset(to, 0, sizeof(_sockaddr_storage));
 
 	if ((host = gethostbyname2(hostname, af_type)) == NULL) {
 		perror("Couldn't get destination host: gethostbyname2()");
+		free(to);
 		return -1;
-	};
+	}
 
 	switch (af_type) {
 	case AF_INET:
@@ -130,6 +138,7 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 
 	if ((s = socket(af_type, SOCK_RAW, IPPROTO_RAW)) < 0) {
 		perror("Couldn't open RAW socket");
+		free(to);
 		return -1;
 	}
 	/* Need this for OpenBSD, shouldn't cause problems elsewhere */
@@ -138,6 +147,8 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 		const int on=1;
 		if (setsockopt(s, IPPROTO_IP,IP_HDRINCL,(const void *)&on,sizeof(on)) <0) { 
 			perror ("Couldn't setsockopt IP_HDRINCL");
+			free(to);
+			close(s);
 			return -2;
 		}
 	}
@@ -149,7 +160,7 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 		I'm sure this *shouldn't* work.  But it does.
 	*/
 #ifdef __sun__
-	if((*(data->data)&0x0F) != 5) {
+	if((*((char *)(data->data))&0x0F) != 5) {
 		ip_header *iphdr = (ip_header *)data->data;
 
 		int optlen = iphdr->header_len*4-20;
@@ -160,8 +171,10 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 		iphdr->tot_len = htons(ntohs(iphdr->tot_len)-optlen);
 
 		if(setsockopt(s,IPPROTO_IP,IP_OPTIONS,
-						  (void *)((data->data)+20),optlen)) {
+						  (void *)(((char *)(data->data))+20),optlen)) {
 			perror("Couldn't setsockopt IP_OPTIONS");
+			free(to);
+			close(s);
 			return -2;
 		}
 	}
@@ -179,6 +192,7 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 									  sent, data->alloc_len, hostname);
 		}
 	}
+	free(to);
 	close(s);
 	return sent;
 }
@@ -335,7 +349,7 @@ static void print_usage(void) {
 int main(int argc, char *const argv[]) {
 	int i;
 
-	struct option *opts;
+	struct option *opts=NULL;
 	int longindex=0;
 	char rbuff[31];
 
@@ -440,13 +454,18 @@ int main(int argc, char *const argv[]) {
 
 	/* Build the getopt listings */
 	opts = malloc((1+num_opts)*sizeof(struct option));
+	if(opts==NULL) {
+		perror("OUT OF MEMORY!\n");
+		return 1;
+	}
 	memset(opts,'\0',(1+num_opts)*sizeof(struct option));
 	i=0;
 	for(mod=first;mod!=NULL;mod=mod->next) {
 		int j;
 		char *s;   // nasty kludge because option.name is const
 		for(j=0;j<mod->num_opts;j++) {
-			opts[i].name = s = malloc(strlen(mod->opts[j].optname)+1);
+			/* +2 on next line is one for the char, one for the trailing null */
+			opts[i].name = s = malloc(strlen(mod->opts[j].optname)+2);
 			sprintf(s,"%c%s",mod->optchar,mod->opts[j].optname);
 			opts[i].has_arg = mod->opts[j].arg;
 			opts[i].flag = NULL;
@@ -519,9 +538,21 @@ int main(int argc, char *const argv[]) {
 		}
 	}
 
+	/* free opts now we have finished with it */
+	for(i=0;i<(1+num_opts);i++) {
+		if(opts[i].name != NULL) free((void *)opts[i].name);
+	}
+	free(opts); /* don't need them any more */
+
 	if(usage) {
 		print_usage();
 		unload_modules(TRUE,verbosity);
+		if(datafile != -1) {
+			munmap(data,datalen);
+			close(datafile);
+			datafile=-1;
+		}
+		if(randomflag) free(data);
 		return 0;
 	}
 
@@ -590,6 +621,7 @@ int main(int argc, char *const argv[]) {
 			if(data == NULL) {
 				fprintf(stderr,"Nothing specified to send!\n");
 				print_usage();
+				free(packet.data);
 				unload_modules(FALSE,verbosity);
 				return 1;
 			} else {
@@ -601,9 +633,11 @@ int main(int argc, char *const argv[]) {
 		else {
 			fprintf(stderr,"Either IPv4 or IPv6 must be the outermost packet\n");
 			unload_modules(FALSE,verbosity);
+			free(packet.data);
 			return 1;
 		}
 		i = sendpacket(&packet,argv[gnuoptind],af_type,verbosity);
+		free(packet.data);
 	}
 	unload_modules(FALSE,verbosity);
 

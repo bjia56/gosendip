@@ -8,6 +8,8 @@
  * 22/02/2002: Fix alignment problem in icmp*csum
  * ChangeLog since 2.1 release:
  * 16/04/2002: Move ipv6_pseudo_header into ipv6.h so tcp.c and udp.c can get it
+ * ChangeLog since 2.4 release:
+ * 21/04/2003: Fix errors detected by valgrind
  */
 
 #include <sys/types.h>
@@ -35,6 +37,7 @@ static void icmpcsum(sendip_data *icmp_hdr, sendip_data *data) {
 	memcpy(tempbuf,icmp_hdr->data,icmp_hdr->alloc_len);
 	memcpy(tempbuf+icmp_hdr->alloc_len,data->data,data->alloc_len);
 	icp->check = csum(buf,icmp_hdr->alloc_len+data->alloc_len);
+	free(buf);
 }
 
 static void icmp6csum(struct in6_addr *src, struct in6_addr *dst,
@@ -63,6 +66,7 @@ static void icmp6csum(struct in6_addr *src, struct in6_addr *dst,
 	memcpy(tempbuf, &phdr, sizeof(phdr));
 	
 	icp->check = csum(buf,sizeof(phdr)+hdr->alloc_len+data->alloc_len);
+	free(buf);
 }
 
 sendip_data *initialize(void) {

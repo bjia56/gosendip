@@ -62,22 +62,29 @@ typedef struct {
 /* Options
  */
 sendip_option ip_opts[] = {
-	{"s",1,"Souce IP address","127.0.0.1"},
+	{"s",1,"Source IP address (see README)","127.0.0.1"},
 	{"d",1,"Desitnation IP address","Correct"},
-	{"h",1,"IP header length","Correct"},
+	{"h",1,"IP header length (see README)","Correct"},
 	{"v",1,"IP version (you almost definately don't want to change this)","4"},
 	{"y",1,"IP type of service","0"},
-	{"l",1,"Total IP packet length","Correct"},
-	{"i",1,"IP packet ID","Random"},
-	{"fr",1,"IP reservced flag","0 (options are 0,1,r)"},
-	{"fd",1,"IP don't fragment flag","0 (options are 0,1,r)"},
-	{"fm",1,"IP more fragments flag","0 (options are 0,1,r)"},
+	{"l",1,"Total IP packet length (see README)","Correct"},
+	{"i",1,"IP packet ID (see README)","Random"},
+	{"fr",1,"IP reservced flag (see README)","0 (options are 0,1,r)"},
+	{"fd",1,"IP don't fragment flag (see README)","0 (options are 0,1,r)"},
+	{"fm",1,"IP more fragments flag (see README)","0 (options are 0,1,r)"},
 	{"f",1,"IP fragment offset","0"},
 	{"t",1,"IP time to live","255"},
 	{"p",1,"IP protcol","0, or set by underlying protocol"},
-	{"c",1,"IP checksum (Doesn't work)","Correct"}
-};
+	{"c",1,"IP checksum (see README)","Correct"},
 
-extern u_int16_t csum(u_int16_t *packet, int packlen);
+	{"onum",1,"IP option as string of hex bytes (length is always correct)","(no options)"},
+	{"oeol",0,"IP option: end of list",NULL},
+	{"onop",0,"IP option: no-op",NULL},
+	{"orr",1,"IP option: record route. Format: pointer:addr1:addr2:...",NULL},
+	{"ots",1,"IP option: timestamp. Format: pointer:overflow:flag:(ip1:)ts1:(ip2:)ts2:...",NULL},
+	{"olsr",1,"IP option: loose source route. Format: pointer:addr1:addr2:...",NULL},
+	{"osid",1,"IP option: stream identifier",NULL},
+	{"ossr",1,"IP option: strict source route. Format: pointer:addr1:addr2:...",NULL}
+};
 
 #endif  /* _SENDIP_IP_H */

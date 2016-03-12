@@ -1,4 +1,4 @@
-/* ripped straight from glibc, with no modifications.  Included to make sure
+/* ripped straight from glibc, with minor modifications.  Included to make sure
 	we get getopt_long_only on all systems
 */
 
@@ -26,7 +26,7 @@
 #include <config.h>
 #endif
 
-#include "getopt.h"
+#include "gnugetopt.h"
 
 #if !defined __STDC__ || !__STDC__
 /* This is a separate conditional since some stdc systems
@@ -98,11 +98,11 @@ main (argc, argv)
      char **argv;
 {
   int c;
-  int digit_optind = 0;
+  int digit_gnuoptind = 0;
 
   while (1)
     {
-      int this_option_optind = optind ? optind : 1;
+      int this_option_gnuoptind = gnuoptind ? gnuoptind : 1;
       int option_index = 0;
       static struct option long_options[] =
       {
@@ -124,8 +124,8 @@ main (argc, argv)
 	{
 	case 0:
 	  printf ("option %s", long_options[option_index].name);
-	  if (optarg)
-	    printf (" with arg %s", optarg);
+	  if (gnuoptarg)
+	    printf (" with arg %s", gnuoptarg);
 	  printf ("\n");
 	  break;
 
@@ -139,9 +139,9 @@ main (argc, argv)
 	case '7':
 	case '8':
 	case '9':
-	  if (digit_optind != 0 && digit_optind != this_option_optind)
+	  if (digit_gnuoptind != 0 && digit_gnuoptind != this_option_gnuoptind)
 	    printf ("digits occur in two different argv-elements.\n");
-	  digit_optind = this_option_optind;
+	  digit_gnuoptind = this_option_gnuoptind;
 	  printf ("option %c\n", c);
 	  break;
 
@@ -154,11 +154,11 @@ main (argc, argv)
 	  break;
 
 	case 'c':
-	  printf ("option c with value `%s'\n", optarg);
+	  printf ("option c with value `%s'\n", gnuoptarg);
 	  break;
 
 	case 'd':
-	  printf ("option d with value `%s'\n", optarg);
+	  printf ("option d with value `%s'\n", gnuoptarg);
 	  break;
 
 	case '?':
@@ -169,11 +169,11 @@ main (argc, argv)
 	}
     }
 
-  if (optind < argc)
+  if (gnuoptind < argc)
     {
       printf ("non-option ARGV-elements: ");
-      while (optind < argc)
-	printf ("%s ", argv[optind++]);
+      while (gnuoptind < argc)
+	printf ("%s ", argv[gnuoptind++]);
       printf ("\n");
     }
 

@@ -1,4 +1,5 @@
 /* dummy.h
+ * see dummy.c for more information
  */
 #ifndef _SENDIP_dummy_H
 #define _SENDIP_dummy_H
@@ -13,7 +14,7 @@ typedef struct {
 
 /* Defines for which parts have been modified
  */
-#define dummy_MOD_dummy  1<<dummy
+#define dummy_MOD_*  1<<*
 
 /* Options
  */

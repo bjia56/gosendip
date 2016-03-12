@@ -1,5 +1,6 @@
 /* ipv6.c - sendip IPv6 code
  * Taken from code by Antti Tuominen <ajtuomin@tml.hut.fi>
+ * ChangeLog since 2.0 release:
  */
 
 #include <sys/types.h>

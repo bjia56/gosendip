@@ -1,7 +1,9 @@
 /* csum.c
-	Computes the standard internet checksum of a set of data
-	from RFC1071
-*/
+ * Computes the standard internet checksum of a set of data (from RFC1071)
+ *	ChangeLog since sendip 2.0:
+ * 02/12/2001: Moved ipv6_csum into icmp.c as that is where it is used
+ * 22/01/2002: Include types.h to make sure u_int*_t defined on Solaris
+ */
 
 #define __USE_BSD    /* GLIBC */
 #define _BSD_SOURCE  /* LIBC5 */
@@ -10,6 +12,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
+#include "types.h"
 
 u_int16_t csum (u_int16_t *packet, int packlen);
 
@@ -32,30 +35,3 @@ u_int16_t csum (u_int16_t *packet, int packlen) {
 
 	return (u_int16_t) ~sum;
 }
-
-struct ipv6_pseudo_hdr {
-	struct in6_addr source;
-	struct in6_addr destination;
-	u_int32_t ulp_length;
-	u_int32_t  zero: 24,
-		nexthdr:  8;
-};
-
-u_int16_t ipv6_csum(struct in6_addr *src, struct in6_addr *dst, u_int8_t nxthdr,
-		    u_int16_t *packet, int packlen) {
-
-	struct ipv6_pseudo_hdr phdr;
-	u_int8_t *tempbuf;
-
-	tempbuf = malloc(sizeof(phdr) + packlen);
-	memset(&phdr, 0, sizeof(phdr));
-	memcpy(&phdr.source, src, sizeof(struct in6_addr));
-	memcpy(&phdr.destination, dst, sizeof(struct in6_addr));
-	phdr.ulp_length = htonl(packlen);
-	phdr.nexthdr = nxthdr;
-	memcpy(tempbuf, &phdr, sizeof(phdr));
-	memcpy(tempbuf + sizeof(phdr), packet, packlen);
-
-	return csum((u_int16_t *)tempbuf, sizeof(phdr) + packlen);
-}
-

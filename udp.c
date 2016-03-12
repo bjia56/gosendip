@@ -1,5 +1,6 @@
 /* udp.c - UDP code for sendip
  * Author: Mike Ricketts <mike@earth.li>
+ * ChangeLog since 2.0 release:
  */
 
 #include <sys/types.h>
@@ -78,6 +79,8 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	}
 
 	/* Find enclosing IP header and do the checksum */
+	/* TODO: Should only check one layer of enclosing header
+		Could also find IPV6 headers? */
 	for(i=num_hdrs;i>0;i--) {
 		if(hdrs[i-1]=='i') {
 			foundit=1; break;

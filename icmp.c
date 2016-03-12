@@ -1,10 +1,17 @@
 /* icmp.c - ICMP support for sendip
  * Author: Mike Ricketts <mike@earth.li>
+ * ChangeLog since 2.0 release:
+ * 02/12/2001: Moved ipv6_csum into here as this is where it is used.
+ * 02/12/2001: Merged icmp6csum with ipv6_csum
+ * 02/12/2001: Only check one layer of headers for enclosing ipv[46] header
+ * 22/01/2002: Include string.h
+ * 22/02/2002: Fix alignment problem in icmp*csum
  */
 
 #include <sys/types.h>
 #include <stdlib.h>
 #include <netinet/in.h>
+#include <string.h>
 #include "sendip_module.h"
 #include "icmp.h"
 #include "ipv4.h"
@@ -14,26 +21,54 @@
  */
 const char opt_char='c';
 
+struct ipv6_pseudo_hdr {
+	struct in6_addr source;
+	struct in6_addr destination;
+	u_int32_t ulp_length;
+	u_int32_t  zero: 24,
+		nexthdr:  8;
+};
+
 static void icmpcsum(sendip_data *icmp_hdr, sendip_data *data) {
 	icmp_header *icp = (icmp_header *)icmp_hdr->data;
-	u_int8_t *tempbuf = malloc(icmp_hdr->alloc_len+data->alloc_len);
+	u_int16_t *buf = malloc(icmp_hdr->alloc_len+data->alloc_len);
+	u_int8_t *tempbuf = (u_int8_t *)buf;
 	icp->check = 0;
+	if(tempbuf == NULL) {
+		fprintf(stderr,"Out of memory: ICMP checksum not computed\n");
+		return;
+	}
 	memcpy(tempbuf,icmp_hdr->data,icmp_hdr->alloc_len);
 	memcpy(tempbuf+icmp_hdr->alloc_len,data->data,data->alloc_len);
-	icp->check = csum((u_int16_t *)tempbuf,icmp_hdr->alloc_len+data->alloc_len);
+	icp->check = csum(buf,icmp_hdr->alloc_len+data->alloc_len);
 }
 
 static void icmp6csum(struct in6_addr *src, struct in6_addr *dst,
-		    sendip_data *hdr, sendip_data *data) {
-	
+							 sendip_data *hdr, sendip_data *data) {
 	icmp_header *icp = (icmp_header *)hdr->data;
-	u_int8_t *tempbuf = malloc(hdr->alloc_len+data->alloc_len);
+	struct ipv6_pseudo_hdr phdr;
+
+	/* Make sure tempbuf is word aligned */
+	u_int16_t *buf = malloc(sizeof(phdr)+hdr->alloc_len+data->alloc_len);
+	u_int8_t *tempbuf = (u_int8_t *)buf;
 	icp->check = 0;
-	memcpy(tempbuf, hdr->data, hdr->alloc_len);
-	memcpy(tempbuf + hdr->alloc_len, data->data, data->alloc_len);
-	icp->check = ipv6_csum(src, dst, IPPROTO_ICMPV6,
-			       (u_int16_t *)tempbuf,
-			       hdr->alloc_len + data->alloc_len);
+	if(tempbuf == NULL) {
+		fprintf(stderr,"Out of memory: ICMP checksum not computed\n");
+		return;
+	}
+	memcpy(tempbuf+sizeof(phdr), hdr->data, hdr->alloc_len);
+	memcpy(tempbuf+sizeof(phdr)+hdr->alloc_len, data->data, data->alloc_len);
+
+	/* do an ipv6 checksum */
+	memset(&phdr, 0, sizeof(phdr));
+	memcpy(&phdr.source, src, sizeof(struct in6_addr));
+	memcpy(&phdr.destination, dst, sizeof(struct in6_addr));
+	phdr.ulp_length = htonl(hdr->alloc_len+data->alloc_len);
+	phdr.nexthdr = IPPROTO_ICMPV6;
+	
+	memcpy(tempbuf, &phdr, sizeof(phdr));
+	
+	icp->check = csum(buf,sizeof(phdr)+hdr->alloc_len+data->alloc_len);
 }
 
 sendip_data *initialize(void) {
@@ -69,28 +104,20 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	icmp_header *icp = (icmp_header *)pack->data;
-	int i, foundit=0;
-	int num_hdrs = strlen(hdrs);
-
+	int i=strlen(hdrs)-1;
 
 	/* Find enclosing IP header and do the checksum */
-	for(i=num_hdrs;i>0;i--) {
-		if(hdrs[i-1]=='i' || hdrs[i-1]=='6') {
-			foundit=1; break;
+	if(hdrs[i]=='i') {
+		// ipv4
+		if(!(headers[i]->modified&IP_MOD_PROTOCOL)) {
+			((ip_header *)(headers[i]->data))->protocol=IPPROTO_ICMP;
+			headers[i]->modified |= IP_MOD_PROTOCOL;
 		}
-	}
-	if(foundit) {
-		i--;
-		if(hdrs[i]=='i') {
-			if(!(headers[i]->modified&IP_MOD_PROTOCOL)) {
-				((ip_header *)(headers[i]->data))->protocol=IPPROTO_ICMP;
-				headers[i]->modified |= IP_MOD_PROTOCOL;
-			}
-		} else {  // ipv6
-			if(!(headers[i]->modified&IPV6_MOD_NXT)) {
-				((ipv6_header *)(headers[i]->data))->ip6_nxt=IPPROTO_ICMPV6;
-				headers[i]->modified |= IPV6_MOD_NXT;
-			}
+	} else if(hdrs[i]=='6') {
+	   // ipv6
+		if(!(headers[i]->modified&IPV6_MOD_NXT)) {
+			((ipv6_header *)(headers[i]->data))->ip6_nxt=IPPROTO_ICMPV6;
+			headers[i]->modified |= IPV6_MOD_NXT;
 		}
 	}
 		
@@ -101,13 +128,16 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 			icp->type=ICMP_ECHO;
 		}
 	}
+
 	if(!(pack->modified&ICMP_MOD_CHECK)) {
 		if (hdrs[i] == '6') {
+			// ipv6
 			struct in6_addr *src, *dst;
 			src = (struct in6_addr *)&(((ipv6_header *)(headers[i]->data))->ip6_src);
 			dst = (struct in6_addr *)&(((ipv6_header *)(headers[i]->data))->ip6_dst);
 			icmp6csum(src, dst, pack, data);
 		} else {
+			// ipv4 or anything else
 			icmpcsum(pack,data);
 		}
 	}

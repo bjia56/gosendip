@@ -1,5 +1,7 @@
 /* rip.c - RIP-1 and -2 code for sendip
  * Taken from code by Richard Polton <Richard.Polton@msdw.com>
+ * ChangeLog since 2.0 release:
+ * 02/12/2001: Only check 1 layer for enclosing UDP header
  */
 
 #include <stdlib.h>
@@ -91,17 +93,8 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
-	int num_hdrs = strlen(hdrs);
-	int i, foundit;
-
-	/* Find enclosing UDP header */
-	for(i=num_hdrs;i>0;i--) {
-		if(hdrs[i-1]=='u') {
-			foundit=1; break;
-		}
-	}
-	if(!foundit) {
-		usage_error("Warning: RIP should be contained in a UDP packet");
+	if(hdrs[strlen(hdrs)-1] != 'u') {
+		usage_error("Warning: RIP should be contained in a UDP packet\n");
 	}
 
 	return TRUE;

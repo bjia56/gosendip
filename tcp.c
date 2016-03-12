@@ -1,6 +1,9 @@
 /* tcp.c - tcp support for sendip
  * Author: Mike Ricketts <mike@earth.li>
  * TCP options taken from code by Alexander Talos <at@atat.at>
+ * ChangeLog since 2.0 release:
+ * 27/11/2001: Added -tonum option
+ * 02/12/2001: Only check 1 layer for enclosing IPV4 header
  */
 
 #include <sys/types.h>
@@ -144,27 +147,36 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 	case 'o':
 		/* TCP OPTIONS */
-		if (!strcmp(opt+2, "eol"))
+		if(!strcmp(opt+2, "num")) {
+			/* Other options (auto length) */
+			u_int8_t *data = malloc(strlen(arg)+2);
+			int len;
+			if(!data) {
+				fprintf(stderr,"Out of memory!\n");
+				return FALSE;
+			}
+			sprintf(data,"0x%s",arg);
+			len = compact_string(data);
+			addoption(*data,len-1,data+1,pack);
+			free(data);
+		} else if (!strcmp(opt+2, "eol")) {
 			/* End of options list RFC 793 kind 0, no length */
 			addoption(0,1,NULL,pack);
-		else if (!strcmp(opt+2, "nop"))
+		} else if (!strcmp(opt+2, "nop")) {
 			/* No op RFC 793 kind 1, no length */
 			addoption(1,1,NULL,pack);
-		else if (!strcmp(opt+2, "mss")) {
+		} else if (!strcmp(opt+2, "mss")) {
 			/* Maximum segment size RFC 793 kind 2 */
 			u_int16_t mss=htons(atoi(arg));
 			addoption(2,4,(u_int8_t *)&mss,pack);
-		} 
-		else if (!strcmp(opt+2, "wscale")) {
+		} else if (!strcmp(opt+2, "wscale")) {
 			/* Window scale rfc1323 */
 			u_int8_t wscale=atoi(arg);
 			addoption(3,3,&wscale,pack);
-		} 
-		else if (!strcmp(opt+2, "sackok")) {
+		} else if (!strcmp(opt+2, "sackok")) {
 			/* Selective Acknowledge permitted rfc1323 */
 			addoption(4,2,NULL,pack);
-		}
-		else if (!strcmp(opt+2, "sack")) {
+		} else if (!strcmp(opt+2, "sack")) {
 		   /* Selective Acknowledge rfc1323 */
 			unsigned char *next;
 			u_int32_t le, re;
@@ -178,10 +190,10 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				count++;
 				if(next) next++;
 			}
-
+			
 			comb = malloc(count*8);
 			c = comb;
-
+			
 			next=arg;
 			while(*next) { 
 				/* get left edge */
@@ -213,8 +225,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			}
 			addoption(5,count*8+2,comb,pack);
 			free(comb);
-		} 
-		else if (!strcmp(opt+2, "ts")) {
+		} else if (!strcmp(opt+2, "ts")) {
 			/* Timestamp rfc1323 */
 			u_int32_t tsval=0, tsecr=0;
 			u_int8_t comb[8];
@@ -230,24 +241,28 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			tsecr=htonl(tsecr);
 			memcpy(comb+4, &tsecr, 4);
 			addoption(8,10,comb,pack);
-		} 
-		else {
-			fprintf(stderr, "unksupported TCP Option %s val %s\n", 
+		} else {
+			/* Unrecognized -to* */
+			fprintf(stderr, "unsupported TCP Option %s val %s\n", 
 					  opt, arg);
 			return FALSE;
 		} 
 		break;
+		
+	default:
+		usage_error("unknown TCP option\n");
+		return FALSE;
+		break;
+
 	}
+
 	return TRUE;
 
 }
 
 bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
-	int num_hdrs = strlen(hdrs);
-	int i, foundit=0;
 	tcp_header *tcp = (tcp_header *)pack->data;
-
 	
 	/* Set relevant fields */
 	if(!(pack->modified&TCP_MOD_SEQ)) {
@@ -264,13 +279,8 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	}
 
 	/* Find enclosing IP header and do the checksum */
-	for(i=num_hdrs;i>0;i--) {
-		if(hdrs[i-1]=='i') {
-			foundit=1; break;
-		}
-	}
-	if(foundit) {
-		i--;
+	if(hdrs[strlen(hdrs)-1]=='i') {
+		int i = strlen(hdrs)-1;
 		if(!(headers[i]->modified&IP_MOD_PROTOCOL)) {
 			((ip_header *)(headers[i]->data))->protocol=IPPROTO_TCP;
 			headers[i]->modified |= IP_MOD_PROTOCOL;
@@ -280,7 +290,7 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 		}
 	} else {
 		if(!(pack->modified&TCP_MOD_CHECK)) {
-			usage_error("TCP checksum not defined when TCP is not embedded in IP\n");
+			usage_error("TCP checksum not defined when TCP is not embedded in IPV4\n");
 			return FALSE;
 		}
 	}

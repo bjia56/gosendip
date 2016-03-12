@@ -109,11 +109,11 @@ const char bgp_opt_char = 'b';
  */
 const u_int32_t  BGP_BUFLEN = 1400;
 
-static bgp_msg_part  bgp_prev_part;
-static u_int8_t     *bgp_len_ptr = NULL;
-static u_int8_t     *bgp_opt_len_ptr = NULL;
-static u_int8_t     *bgp_wdr_len_ptr = NULL;
-static u_int8_t     *bgp_attr_len_ptr = NULL;
+/*static*/ bgp_msg_part  bgp_prev_part;
+/*static*/ u_int8_t     *bgp_len_ptr = NULL;
+/*static*/ u_int8_t     *bgp_opt_len_ptr = NULL;
+/*static*/ u_int8_t     *bgp_wdr_len_ptr = NULL;
+/*static*/ u_int8_t     *bgp_attr_len_ptr = NULL;
 
 
 sendip_data *initialize (void)
@@ -144,10 +144,8 @@ sendip_data *initialize (void)
 		*ptr++ = 4;
 		
 		data->alloc_len = ptr - (u_int8_t *)data->data;
-		
 		bgp_prev_part = BGP_HEADER;
 	} 
-	
 	return (data);
 }
 
@@ -571,14 +569,10 @@ bool finalize (char        *hdrs,
                sendip_data *data,
                sendip_data *pack)
 {
-	bool rc = TRUE;
-	
 	if (hdrs[strlen(hdrs) - 1] != 't') {
-		usage_error("BGP must be carried over TCP\n");
-		rc = FALSE;
+		usage_error("WARNING: BGP should be carried over TCP\n");
 	}
-	
-	return (rc);
+	return TRUE;
 }
 
 

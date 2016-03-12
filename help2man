@@ -514,11 +514,19 @@ for (@pre, (grep ! /^($filter)$/o, @include), @post)
 
 exit;
 
-# Convert option dashes to \- to stop nroff software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# Convert option dashes to \- to stop nroff from hyphenating 'em, and
+# embolden.  Option arguments get italicised.
+sub convert_option
+{
+    local $_ = '\fB' . shift;
 
-Written by Brendan O'Dea <bod\@compusol.com.au>
-EOT
+    s/-/\\-/g;
+    unless (s/\[=(.*)\]$/\\fR[=\\fI$1\\fR]/)
+    {
+	s/=(.)/\\fR=\\fI$1/;
+	s/ (.)/ \\fI$1/;
+	$_ .= '\fR';
+    }
 
-my $help_info = <<EOT;
-`$this_program' generates a man page out of `-
+    $_;
+}

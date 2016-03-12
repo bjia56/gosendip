@@ -86,7 +86,9 @@ sendip_option tcp_opts[] = {
 	{"ff",1,"TCP FIN bit","0 (options are 0,1,r)"},
 	{"w",1,"TCP window size","65535"},
 	{"c",1,"TCP checksum","Correct"},
-	{"oeol",0,"TCP option: end of list","By default, no TCP options are added"},
+
+	{"onum",1,"TCP option as string of hex bytes (length is always correct)","(no options)"},
+	{"oeol",0,"TCP option: end of list", NULL },
 	{"onop",0,"TCP option: no op", NULL },
 	{"omss",1,"TCP option: maximum segment size", NULL },
 	{"owscale",1,"TCP option: window scale", NULL },

@@ -3,11 +3,7 @@
 
 #include <stdio.h>   // for fprintf
 
-typedef int bool;
-#ifndef FALSE
-#define TRUE  (0==0)
-#define FALSE (!TRUE)
-#endif
+#include "types.h"
 
 /* Options
  */
@@ -40,5 +36,8 @@ char get_optchar(void);
 #endif  /* _SENDIP_MAIN */
 
 #define usage_error(x) fprintf(stderr,x)
+
+extern u_int16_t csum(u_int16_t *packet, int packlen);
+extern int compact_string(char *data_out);
 
 #endif  /* _SENDIP_MODULE_H */

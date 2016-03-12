@@ -51,8 +51,4 @@ sendip_option ipv6_opts[] = {
 	{"d",1,"IPv6 destination address","Correct"}
 };
 
-extern u_int16_t ipv6_csum(
-	struct in6_addr *src, struct in6_addr *dst, u_int8_t nxthdr,
-	u_int16_t *packet, int packlen);
-
 #endif  /* _SENDIP_IPV6_H */

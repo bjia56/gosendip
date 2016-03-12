@@ -1,0 +1,15 @@
+MAIN: Try using PF_PACKET (so ip works with wrong checksums)
+      breaks if -d and -f specified
+TCP: add -tonum for arbitary option
+
+ALL
+- IP (v4) options
+- NTP (suggested by John Deatherage <Jdeatherage@CQOS.COM>)
+- DNS
+- ARP
+- IPX
+- bugfixes
+- ncurses and/or X interface
+- random packet data
+- allow comments in packet data files
+- script to automatically frag packets (John Deatherage <Jdeatherage@CQOS.COM>)

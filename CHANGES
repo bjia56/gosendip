@@ -1,0 +1,59 @@
+Changes between sendip-0.0.1 and sendip-0.0.2
+* Now compiles under libc5 as well as glibc
+
+Changes between sendip-0.0.2 and sendip-0.0.3
+* New man page, taken from one supplied by rmartini <rmartini@iis.com.br>
+
+Changes between sendip-0.0.3 and sendip-1.0
+* Makefile no longer requires GNU make or etags
+* included spec file from Delvin Upton <delvin.upton@spectria.com>
+* now ship source and binary RPMs as well as source tar.gz
+* now compiles on FreeBSD (and hopefully Net and Open) as well as linux
+* minor bug fixes
+* added option for random header fields (idea roughly by ganesh@earth.li)
+* switched to 2digit versions
+
+Changes between sendip-1.0 and sendip-1.1
+* Fix bug the caused incorrect tcp checksums (smitchell@realogy.com)
+* Add RIP-1 and RIP-2 support from Richard Polton <Richard.Polton@msdw.com>
+
+Changes between sendip-1.1 and sendip-1.2
+* Add IPv6 support from Antti Tuominen <ajtuomin@tml.hut.fi>
+* Add (some) TCP options form Alexander Talos <at@atat.at>
+* Bugfixes
+
+Changes between sendip-1.2 and sendip-1.3
+* Compile fix for *BSD
+* Various other bugfixes
+* Removed bogus libpcap dependancy
+* Now included in debian unstable, hopefully
+* Ready to be included in FreeBSD ports collection, hopefully
+* Added -h option
+
+Changes between sendip-1.3 and sendip-1.4
+* Added contrib directory and wake on lan script, curtesy of
+  Beat Bolli <beat.bolli@earthling.net>
+* RIP default option from Richard Polton
+
+Changes between sendip-1.4 and sendip-2.0-pre2
+* RIP bugfix from Richard Polton
+* Massive code tidy up
+* -tr no longer affects -tfe and -tfc
+* TCP header length defaults to correct even if options are supplied
+* Setting IP checksum prints a warning as it might not work
+* Can now specify the version field of the IP header
+* -if now documented correctly
+* man page autobuilds from help, help is more likely to be right
+* TCP over IPV6 still sends the wrong checksum, but now it warns you first
+* Enable setting of IPV6 priority
+* ICMP and ICMPv6 merged as they are almost identical
+* RIP no longer only accepts 25 entries
+* BGP support from David Ball <db@earth.li>
+
+Changes between sendip-2.0-pre2 and sendip-2.0
+* include string.h to avoid memcpy(), strlen() and strcpy() warnings in
+  ipv4.c, ipv6.c, rip.c and udp.c (Antti Tuominen <ajtuomin@tml.hut.fi>)
+* ipv6 checksum fixes (Antti Tuominen)
+* BGP fixes (David Ball <db@earth.li>)
+* Compiles on AIX (thanks to Parag Kukde <pkukde@yahoo.com>)
+* -d now supports hex, octal or binary data

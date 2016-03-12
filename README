@@ -1,0 +1,69 @@
+SendIP
+Author:  Mike Ricketts <mike@earth.li>
+Web:     http://www.earth.li/projectpurple/progs/sendip.html
+Part of Project Purple. (http://www.earth.li/projectpurple/)
+
+1. Introduction
+
+   SendIP is a tool to send completely arbitrary packets out over the network.
+   In conjunction with PackPrint (see
+   http://www.earth.li/projectpurple/progs/packprint.html), this makes an
+   extremely powerful debugging tool for networks.
+
+1.1 Home page
+
+   All the latest news, documentation and versions of SendIP will be made
+   available from http://www.earth.li/projectpurple/ or directly from the
+   the author.
+
+2. Protocols
+
+   Here is a list of protocols that SendIP currently understands:
+   * IPv4
+   *   TCP
+   *     BGP
+   *   ICMP
+   *   UDP
+   *     RIP
+   * IPv6
+   *   ICMPv6
+
+   Other protocols will be added in future versions, as and when I have time
+   to add them.
+
+   Of course, it is still possible to send packets using other protocols, but
+   you have to construct the packet data and headers entirely by hand.
+
+3. Usage instructions
+
+   SendIP can take a huge number of commandline parameters.  For this reason,
+   future versions may have some sort of user interface...
+
+	Please read the man page or sendip -h for details.  They are not documented
+	here because they change often between versions and I can't be bothered to
+	keep this up to date.
+
+4. Installation
+
+   make ; make install should work.  You may need gcc to compile it.
+   If  you can't persuade it to compile or install, mail me with details of
+   what goes wrong, and what system you are trying to install it on.
+   You can change where it installs by changing BINDIR and/or PREFIX at the
+   top of the Makefile.
+	A .spec file is included to build RPMS, and source and binary RPMS are
+	also available from the web page.  Debian packages are also available, and
+	sendip is included in the FreeBSD ports collection.
+
+5. Problems, Bugs, and Comments
+
+   If you have any comments, suggestions, or bug reports, please email me.
+
+   The email address I currently use is mike@earth.li
+
+   I am interested in any feedback in order to improve SendIP.
+
+6. License
+
+   SendIP is distributed under the GNU Public License a copy of which is
+   included in this archive as LICENSE.
+

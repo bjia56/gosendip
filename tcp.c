@@ -8,6 +8,8 @@
  * 16/04/2002: Tidy up checksum code (like in icmp.c)
  * 16/04/2002: Add support for TCP over IPV6 (code from armite <armite@163.com>)
  * 26/08/2002: Fix bug where tcp length was wrong with tcp options
+ * ChangeLog since 2.2 release:
+ * 24/11/2002: made it compile on archs that care about alignment
  */
 
 #include <sys/types.h>
@@ -81,11 +83,11 @@ static void tcp6csum(sendip_data *ipv6_hdr, sendip_data *tcp_hdr,
 static void addoption(u_int8_t opt, u_int8_t len, u_int8_t *data,
 							 sendip_data *pack) {
 	pack->data = realloc(pack->data, pack->alloc_len + len);
-	*(pack->data+pack->alloc_len)=opt;
+	*((u_int8_t *)pack->data+pack->alloc_len) = opt;
 	if(len > 1)
-		*(pack->data+pack->alloc_len+1)=len;
+		*((u_int8_t *)pack->data+pack->alloc_len+1)=len;
 	if(len > 2)
-		memcpy(pack->data+pack->alloc_len+2,data,len-2);
+		memcpy((u_int8_t *)pack->data+pack->alloc_len+2,data,len-2);
 	pack->alloc_len += len;
 }
 

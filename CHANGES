@@ -112,3 +112,8 @@ Changes between sendip-2.1 and sendip-2.2
 * rip.so:
 - off-by-one error causing segfaults and other badness fixed
 - hton* added where needed
+
+Changes between sendip-2.2 and sendip-2.3
+* Now compiles on archs requiring alignment
+* ripng.so:
+- now conforms more closely to the spec (help from armite <armite@163.com>

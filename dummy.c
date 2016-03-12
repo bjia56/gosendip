@@ -102,7 +102,7 @@ sendip_data *initialize(void) {
 	dummy_header *dummy = malloc(sizeof(dummy_header));
 	memset(dummy,0,sizeof(dummy_header));
 	ret->alloc_len = sizeof(dummy_header);
-	ret->data = (void *)dummy;
+	ret->data = dummy;
 	ret->modified=0;
 	return ret;
 }

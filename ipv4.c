@@ -4,6 +4,8 @@
  * 26/11/2001 IP options
  * 23/01/2002 Spelling fix (Dax Kelson <dax@gurulabs.com>)
  * 26/08/2002 Put tot_len field in host byte order on FreeBSD
+ * ChangeLog since 2.2 release:
+ * 24/11/2002 make it compile on archs that care about alignment
  */
 
 #include <sys/types.h>
@@ -79,11 +81,11 @@ static void addoption(u_int8_t copy, u_int8_t class, u_int8_t num,
 	/* opt is copy flag (1bit) + class (2 bit) + number (5 bit) */
 	u_int8_t opt = ((copy&1)<<7) | ((class&3)<<5) | (num&31);
 	pack->data = realloc(pack->data, pack->alloc_len + len);
-	*(pack->data+pack->alloc_len)=opt;
+	*((u_int8_t *)pack->data+pack->alloc_len) = opt;
 	if(len > 1)
-		*(pack->data+pack->alloc_len+1)=len;
+		*((u_int8_t *)pack->data+pack->alloc_len+1) = len;
 	if(len > 2)
-		memcpy(pack->data+pack->alloc_len+2,data,len-2);
+		memcpy((u_int8_t *)pack->data+pack->alloc_len+2,data,len-2);
 	pack->alloc_len += len;
 }
 

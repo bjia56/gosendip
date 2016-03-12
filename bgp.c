@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------
- * bgp.c   - BGP module for SendIP
+ * bgp.c   - bgp module for SendIP
  *
  * Copyright (C) David Ball for Project Purple, August 2001
  *----------------------------------------------------------------------------
@@ -205,7 +205,7 @@ bool do_opt (char        *optstring,
              char        *optarg,
              sendip_data *pack)
 {
-	u_int8_t *ptr = pack->data + pack->alloc_len;
+	u_int8_t *ptr = (u_int8_t *)pack->data + pack->alloc_len;
 	u_int8_t *rem_ptr = NULL;
 	char     *arg_ptr = NULL;
 	char     *new_arg_ptr = NULL;
@@ -215,16 +215,16 @@ bool do_opt (char        *optstring,
 
 	switch (optstring[1]) {
 	case 'm':
-		rem_ptr = pack->data;
+		rem_ptr = (u_int8_t *)pack->data;
 		(void)bgp_parse_bytes(rem_ptr, optarg, NULL, 16, 16, '\0');
 		break;
 	case 'l':
-		rem_ptr = pack->data + 16;
+		rem_ptr = (u_int8_t *)pack->data + 16;
 		PUTSHORT(rem_ptr, (u_int16_t)strtoul(optarg, NULL, 10));
 		pack->modified |= BGP_MOD_LENGTH;
 		break;
 	case 't':
-		rem_ptr = pack->data + 18;
+		rem_ptr = (u_int8_t *)pack->data + 18;
 		*rem_ptr = (u_int8_t)strtoul(optarg, NULL, 0);
 		break;
 	case 'o':

@@ -7,6 +7,8 @@
  * 27/11/2001 change search path for libs to include <foo>.so
  * 23/01/2002 make random fields more random (Bryan Croft <bryan@gurulabs.com>)
  * 10/08/2002 detect attempt to use multiple -d and -f options
+ * Changes since 2.2 release:
+ * 24/11/2002 compile on archs requiring alignment
  */
 
 #define _SENDIP_MAIN
@@ -57,8 +59,9 @@ typedef struct _s_m {
 	nasty version
 */
 typedef struct {
-	unsigned short int ss_family;
-	char ss_padding[126];
+	u_int16_t ss_family;
+	u_int32_t ss_align;
+	char ss_padding[122];
 } _sockaddr_storage;
 
 static int num_opts=0;
@@ -112,10 +115,12 @@ static int sendpacket(sendip_data *data, char *hostname, int af_type,
 		printf("Final packet data:\n");
 		for(i=0; i<data->alloc_len; ) {
 			for(j=0; j<4 && i+j<data->alloc_len; j++)
-				printf("%02X ", (unsigned char)(data->data[i+j])); 
+				printf("%02X ", ((unsigned char *)(data->data))[i+j]); 
 			printf("  ");
-			for(j=0; j<4 && i+j<data->alloc_len; j++)
-				printf("%c", isprint((int)data->data[i+j])?data->data[i+j]:'.'); 
+			for(j=0; j<4 && i+j<data->alloc_len; j++) {
+				int c=(int) ((unsigned char *)(data->data))[i+j];
+				printf("%c", isprint(c)?((char *)(data->data))[i+j]:'.'); 
+			}
 			printf("\n");
 			i+=j;
 		}
@@ -232,6 +237,7 @@ static bool load_module(char *modname) {
 		}
 		free(error0);
 	}
+	strcpy(newmod->name,modname);
 	if(NULL==(newmod->initialize=dlsym(newmod->handle,"initialize"))) {
 		fprintf(stderr,"%s doesn't have an initialize function: %s\n",modname,
 				  dlerror());
@@ -509,14 +515,14 @@ int main(int argc, char *const argv[]) {
 	if(data != NULL) packet.alloc_len+=datalen;
 	packet.data = malloc(packet.alloc_len);
 	for(i=0, mod=first;mod!=NULL;mod=mod->next) {
-		memcpy(packet.data+i,mod->pack->data,mod->pack->alloc_len);
+		memcpy((char *)packet.data+i,mod->pack->data,mod->pack->alloc_len);
 		free(mod->pack->data);
-		mod->pack->data = packet.data+i;
+		mod->pack->data = (char *)packet.data+i;
 		i+=mod->pack->alloc_len;
 	}
 
 	/* Add any data */
-	if(data != NULL) memcpy(packet.data+i,data,datalen);
+	if(data != NULL) memcpy((char *)packet.data+i,data,datalen);
 	if(datafile != -1) {
 		munmap(data,datalen);
 		close(datafile);
@@ -530,7 +536,7 @@ int main(int argc, char *const argv[]) {
 		sendip_data d;
 
 		d.alloc_len = datalen;
-		d.data = packet.data+packet.alloc_len-datalen;
+		d.data = (char *)packet.data+packet.alloc_len-datalen;
 
 		for(i=0,mod=first;mod!=NULL;mod=mod->next,i++) {
 			hdrs[i]=mod->optchar;
@@ -548,7 +554,7 @@ int main(int argc, char *const argv[]) {
 			mod->finalize(hdrs, headers, &d, mod->pack);
 
 			/* Get everything ready for the next call */
-			d.data-=mod->pack->alloc_len;
+			d.data=(char *)d.data-mod->pack->alloc_len;
 			d.alloc_len+=mod->pack->alloc_len;
 		}
 	}

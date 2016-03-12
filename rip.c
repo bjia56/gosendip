@@ -1,9 +1,11 @@
 /* rip.c - RIP-1 and -2 code for sendip
  * Taken from code by Richard Polton <Richard.Polton@msdw.com>
  * ChangeLog since 2.0 release:
- * 02/12/2001: Only check 1 layer for enclosing UDP header
- * 21/08/2002: Off-by-one fix in -re handling that caused bad things to happen
- * 21/08/2002: htons() and htonl() added where needed
+ * 02/12/2001 Only check 1 layer for enclosing UDP header
+ * 21/08/2002 Off-by-one fix in -re handling that caused bad things to happen
+ * 21/08/2002 htons() and htonl() added where needed
+ * ChangeLog since 2.2 release:
+ * 24/11/2002 make it compile on archs that care about alignment
  */
 
 #include <stdlib.h>
@@ -48,7 +50,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		}
 		pack->modified |= RIP_IS_AUTH;
 		pack->data = realloc(pack->data,pack->alloc_len+strlen(arg));
-		strcpy(pack->data+pack->alloc_len,arg);
+		strcpy((char *)pack->data+pack->alloc_len,arg);
 		pack->alloc_len += strlen(arg);
 		break;
 	case 'e': /* rip entry */

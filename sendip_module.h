@@ -17,7 +17,7 @@ typedef struct {
 /* Data
  */
 typedef struct {
-	char *data;
+	void *data;
 	int alloc_len;
 	unsigned int modified;
 } sendip_data;

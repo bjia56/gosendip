@@ -19,6 +19,11 @@ RIP, RIPng, TCP, UDP, ICMP, or raw IPv4 or IPv6 packet.  It also allows any
 data to be added to the packet.
 
 %changelog
+* Tue Dec  3 2002 Mike Ricketts <mike@earth.li>
+- Update to version 2.3
+- RIPng fixes
+- Compile on archs requiring alignment
+
 * Sat Oct 12 2002 Mike Ricketts <mike@earth.li>
 - Update to version 2.2
 - See CHANGES for a more complete list (there's even more than last time)

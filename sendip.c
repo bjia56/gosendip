@@ -7,8 +7,10 @@
  * 27/11/2001 change search path for libs to include <foo>.so
  * 23/01/2002 make random fields more random (Bryan Croft <bryan@gurulabs.com>)
  * 10/08/2002 detect attempt to use multiple -d and -f options
- * Changes since 2.2 release:
+ * ChangeLog since 2.2 release:
  * 24/11/2002 compile on archs requiring alignment
+ * ChangeLog since 2.3 release:
+ * 21/04/2003 random data (Anand (Andy) Rao <andyrao@nortelnetworks.com>)
  */
 
 #define _SENDIP_MAIN
@@ -300,6 +302,11 @@ static void print_usage(void) {
 	int i;
 	printf("Usage: %s [-v] [-d data] [-h] [-f datafile] [-p module] [module options] hostname\n",progname);
 	printf(" -d data\tadd this data as a string to the end of the packet\n");
+	printf("\t\tData can be:\n");
+	printf("\t\trN to generate N random(ish) data bytes;\n");
+	printf("\t\t0x or 0X followed by hex digits;\n");
+	printf("\t\t0 followed by octal digits;\n");
+	printf("\t\tany other stream of bytes\n");
 	printf(" -f datafile\tread packet data from file\n");
 	printf(" -h\t\tprint this message\n");
 	printf(" -p module\tload the specified module (see below)\n");
@@ -337,7 +344,8 @@ int main(int argc, char *const argv[]) {
 	char *data=NULL;
 	int datafile=-1;
 	int datalen=0;
-	
+	bool randomflag=FALSE;
+
 	sendip_module *mod;
 	int optc;
 
@@ -367,7 +375,22 @@ int main(int argc, char *const argv[]) {
 		case 'd':
 			if(data == NULL) {
 				data=gnuoptarg;
-				datalen = compact_string(data);
+				if(*data=='r') {
+					/* random data, format is r<n> when n is number of bytes */
+					datalen = atoi(data+1);
+					if(datalen < 1) {
+						fprintf(stderr,"Random data with length %d invalid\nNo data will be included\n",datalen);
+						data=NULL;
+						datalen=0;
+					}
+					data=(char *)malloc(datalen);
+					for(i=0;i<datalen;i++)
+						data[i]=(char)random();
+					randomflag=TRUE;
+				} else {
+					/* "normal" data */
+					datalen = compact_string(data);
+				}
 			} else {
 				fprintf(stderr,"Only one -d or -f option can be given\n");
 				usage = TRUE;
@@ -528,6 +551,7 @@ int main(int argc, char *const argv[]) {
 		close(datafile);
 		datafile=-1;
 	}
+	if(randomflag) free(data);
 
 	/* Finalize from inside out */
 	{

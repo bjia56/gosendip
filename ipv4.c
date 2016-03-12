@@ -6,6 +6,9 @@
  * 26/08/2002 Put tot_len field in host byte order on FreeBSD
  * ChangeLog since 2.2 release:
  * 24/11/2002 make it compile on archs that care about alignment
+ * ChangeLog since 2.3 release:
+ * 23/12/2002 fix bug with -iossr and -iolsr
+ * 20/01/2003 fix FreeBSD sendto(): invalid argument error.  Again.
  */
 
 #include <sys/types.h>
@@ -140,10 +143,11 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		pack->modified |= IP_MOD_TOS;
 		break;
 	case 'l':
-#ifdef __FreeBSD
-		iph->tot_len = /*htons*/((u_int16_t)strtoul(arg, (char **)NULL, 0));
-#else
-		iph->tot_len = htons((u_int16_t)strtoul(arg, (char **)NULL, 0));
+		iph->tot_len = (u_int16_t)strtoul(arg, (char **)NULL, 0);
+#ifndef __FreeBSD__
+#ifndef __FreeBSD
+		iph->tot_len = htons(iph->tot_len);
+#endif
 #endif
 		pack->modified |= IP_MOD_TOTLEN;
 		break;
@@ -373,7 +377,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				free(data);
 				return FALSE;
 			} else {
-				addoption(1,0,3,len+2,arg,pack);
+				addoption(1,0,3,len+2,data,pack);
 				free(data);
 			}
 		} else if(!strcmp(opt+2, "sid")) {
@@ -395,7 +399,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				free(data);
 				return FALSE;
 			} else {
-				addoption(1,0,9,len+2,arg,pack);
+				addoption(1,0,9,len+2,data,pack);
 				free(data);
 			}
 		} else {
@@ -424,10 +428,11 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 		iph->header_len=(pack->alloc_len+3)/4;
 	}
 	if(!(pack->modified & IP_MOD_TOTLEN)) {
-#ifdef __FreeBSD
-		iph->tot_len=/*htons*/(pack->alloc_len + data->alloc_len);
-#else
-		iph->tot_len=htons(pack->alloc_len + data->alloc_len);
+		iph->tot_len=pack->alloc_len + data->alloc_len;
+#ifndef __FreeBSD__
+#ifndef __FreeBSD
+		iph->tot_len = htons(iph->tot_len);
+#endif
 #endif
 	}
 	if(!(pack->modified & IP_MOD_ID)) {

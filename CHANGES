@@ -117,3 +117,10 @@ Changes between sendip-2.2 and sendip-2.3
 * Now compiles on archs requiring alignment
 * ripng.so:
 - now conforms more closely to the spec (help from armite <armite@163.com>
+
+Changes between sendip-2.3 and sendip-2.4
+* Random packet data payloads (Anand (Andy) Rao <andyrao@nortelnetworks.com>)
+* ipv4.so:
+- fix bug with iossr and iolsr adding wrong ip options
+- ip_len really is now in host byte order on FreeBSD, so the sendto: Invalid
+  argument thing really is fixed now.  I hope.  (brdraney@nersc.gov)

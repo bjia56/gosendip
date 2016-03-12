@@ -19,7 +19,14 @@ typedef struct {
 	u_int8_t tos;
 	u_int16_t tot_len;
 	u_int16_t id;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+// FreeBSD automatically hotnses this, for some reason.
+#if defined(__FreeBSD__) || defined(__FreeBSD)
+	u_int16_t res:1;
+	u_int16_t df:1;
+	u_int16_t mf:1;
+	u_int16_t frag_off:13;
+#define IP_SET_FRAGOFF(ip,v) (ip)->frag_off=(v)        
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 	u_int16_t frag_off1:5;
 	u_int16_t mf:1;
 	u_int16_t df:1;

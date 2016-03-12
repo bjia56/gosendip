@@ -130,3 +130,18 @@ Changes between sendip-2.4 and sendip-2.5
 * Fix compile bug on Solaris (found by Dave Gibelli <dgibelli@tiscali.co.uk>)
 * tcp.so
 - Fix -tonum bug found by Yaniv Kaul <ykaul@checkpoint.com>
+
+Changes between sendip-2.5 and sendip-2.6
+* Fix BSD byte order bug found by Jaya Krishna <njayakrishna@rediffmail.com>
+* Fix ipv6 options bug found by Jaya Krishna <njayakrishna@rediffmail.com>
+* Add -s option to set sockets options:
+- SO_BROADCAST requested by Andre Luerssen" <luerssen@luerssen-consulting.de>)
+- IP_HDRINCL alread required
+- IPV6_* options required (pointed out by Jaya Krishna)
+* tcp.so
+- Fix -tonum segfault (zamez)
+* rip.so
+- Fix multiple -re options (pointed out by several people)
+- Fix -ra (thanks to sharmily.anantaraman@conexant.com)
+* udp.c
+- Fix udpv6 checksum bug (thanks to sarkarbiplab@gmail.com)

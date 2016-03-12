@@ -9,11 +9,11 @@ typedef struct {
 	u_int8_t command;
 	u_int8_t version;
 	u_int16_t res;
-	u_int16_t addressFamily;
-	u_int16_t routeTagOrAuthenticationType;
 } rip_header;
 
 typedef struct {
+	u_int16_t addressFamily;
+	u_int16_t routeTagOrAuthenticationType;
 	u_int32_t address;
 	u_int32_t subnetMask;
 	u_int32_t nextHop;
@@ -24,9 +24,7 @@ typedef struct {
  */
 #define RIP_MOD_COMMAND   1
 #define RIP_MOD_VERSION   1<<1
-#define RIP_MOD_ADDRFAM   1<<2
-#define RIP_MOD_ROUTETAG  1<<3
-#define RIP_IS_AUTH       1<<4
+#define RIP_MOD_RESERVED  1<<2
 
 /* Options
  */
@@ -35,8 +33,9 @@ sendip_option rip_opts[] = {
 	{"c",1,
 	 "RIP command (1=request, 2=response, 3=traceon (obsolete), 4=traceoff (obsolete), 5=poll (undocumented), 6=poll entry (undocumented)","1"},
 	{"e",1,"Add a RIP entry.  Format is: Address family:route tag:address:subnet mask:next hop:metric","2:0:0.0.0.0:255.255.255.0:0.0.0.0:16, any option my be left out to use the default"},
-	{"a",1,"RIP authenticat packet, argument is the password; do not use any other RIP options on this RIP header",NULL},
-	{"d",0,"RIP default request - get router's entire routing table; do not use any other RIP options on this RIP header",NULL}
+	{"a",1,"Add RIP auth entry.  Format is: AuthType:Password, AuthType may be omitted for default basic auth",NULL},
+	{"d",0,"RIP default request - get router's entire routing table; do not use any other RIP options on this RIP header",NULL},
+	{"r",1,"RIP reserved field","0"}
 };
 
 /* Helpful macros */

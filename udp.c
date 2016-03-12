@@ -6,6 +6,8 @@
  * 16/04/2002: Add support for UDP over IPV6
  * ChangeLog since 2.4 release:
  * 21/04/2003: Fix errors found by valgrind
+ * ChangeLog since 2.5 release:
+ * 03/11/2006: Fix UDPv6 checksum error found by biplab sarkar
  */
 
 #include <sys/types.h>
@@ -65,7 +67,8 @@ static void udp6csum(sendip_data *ipv6_hdr, sendip_data *udp_hdr,
 	memset(&phdr,0,sizeof(phdr));
 	memcpy(&phdr.source,&ipv6->ip6_src,sizeof(struct in6_addr));
 	memcpy(&phdr.destination,&ipv6->ip6_dst,sizeof(struct in6_addr));
-	phdr.ulp_length=IPPROTO_UDP;
+	phdr.nexthdr=IPPROTO_UDP;
+	phdr.ulp_length=udp->len;
 	
 	memcpy(tempbuf,&phdr,sizeof(phdr));
 

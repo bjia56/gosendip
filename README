@@ -48,9 +48,9 @@ Part of Project Purple. (http://www.earth.li/projectpurple/)
    SendIP can take a huge number of commandline parameters.  For this reason,
    future versions may have some sort of user interface...
 
-	Please read the man page or sendip -h for details.  They are not documented
-	here because they change often between versions and I can't be bothered to
-	keep this up to date.
+   Please read the man page or sendip -h for details.  They are not documented
+   here because they change often between versions and I can't be bothered to
+   keep this up to date.
 
 4. Installation
 
@@ -74,9 +74,9 @@ Part of Project Purple. (http://www.earth.li/projectpurple/)
    You can change where it installs by changing BINDIR and/or PREFIX at the
    top of the Makefile.
 
-	A .spec file is included to build RPMS, and source and binary RPMS are
-	also available from the web page.  Debian packages are also available, and
-	sendip is included in the FreeBSD ports collection.
+   A .spec file is included to build RPMS, and source and binary RPMS are
+   also available from the web page.  Debian packages are also available, and
+   sendip is included in the FreeBSD ports collection.
 
 5. Problems, Bugs, and Comments
 

@@ -6,6 +6,9 @@
  * 21/08/2002 htons() and htonl() added where needed
  * ChangeLog since 2.2 release:
  * 24/11/2002 make it compile on archs that care about alignment
+ * ChangeLog since 2.5 release:
+ * 26/10/2004 fix bug with multiple -re options (found by several people)
+ * 28/10/2004 fix -ra (thanks to sharmily.anantaraman@conexant.com)
  */
 
 #include <stdlib.h>
@@ -46,12 +49,21 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		break;
 	case 'a': /* authenticate */
 		if(RIP_NUM_ENTRIES(pack) != 0) {
-			usage_error("Warning: a real RIP-2 packet only has authentication on the first entry.\n");
+			usage_error("Warning: a real RIP-2 packet only has authentication as the first entry.\n");
 		}
-		pack->modified |= RIP_IS_AUTH;
-		pack->data = realloc(pack->data,pack->alloc_len+strlen(arg));
-		strcpy((char *)pack->data+pack->alloc_len,arg);
-		pack->alloc_len += strlen(arg);
+		RIP_ADD_ENTRY(pack);
+		ripopt = RIP_OPTION(pack);	
+		memset(ripopt,0,sizeof(rip_options));
+		ripopt->addressFamily=0xFFFF;
+		p=q=arg;
+		/* TODO: if arg is malformed, this could segfault */
+		while(*(q++)!=':') /* do nothing */; *(--q)='\0';
+		ripopt->routeTagOrAuthenticationType=htons((p==q)?2:(u_int16_t)strtoul(p, (char **)0,0));
+		p=++q;
+		if(strlen(p) > 16) {
+		  usage_error("Warning: RIP passord cannot be longer than 16 characters.\n");
+		}
+		strncpy((char *)&(ripopt->address),p,16);
 		break;
 	case 'e': /* rip entry */
 		if(RIP_NUM_ENTRIES(pack)==25) {
@@ -62,11 +74,9 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		p=q=arg;
 		/* TODO: if arg is malformed, this could segfault */
 		while(*(q++)!=':') /* do nothing */; *(--q)='\0';
-		rippack->addressFamily= htons((p==q)?2:(u_int16_t)strtoul(p, (char **)0, 0));
-		pack->modified |= RIP_MOD_ADDRFAM;
+		ripopt->addressFamily= htons((p==q)?2:(u_int16_t)strtoul(p, (char **)0, 0));
 		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
-		rippack->routeTagOrAuthenticationType=htons((p==q)?0:(u_int16_t)strtoul(p, (char **)0,0));
-		pack->modified |= RIP_MOD_ROUTETAG;
+		ripopt->routeTagOrAuthenticationType=htons((p==q)?0:(u_int16_t)strtoul(p, (char **)0,0));
 		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
 		ripopt->address=(p==q)?inet_addr("0.0.0.0"):inet_addr(p);
 		p=++q; while(*(q++)!=':') /* do nothing */; *(--q)='\0';
@@ -80,16 +90,23 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		if(RIP_NUM_ENTRIES(pack) != 0) {
 			usage_error("Warning: a real RIP-1 or -2 packet does not have any entries in a default request.\n");
 		}
-		rippack->command = (u_int8_t)1;
-		rippack->addressFamily = (u_int16_t)0;
-		rippack->routeTagOrAuthenticationType = (u_int16_t)0;
 		RIP_ADD_ENTRY(pack);
 		ripopt=RIP_OPTION(pack);
+		rippack->command = (u_int8_t)1;
+		ripopt->addressFamily = (u_int16_t)0;
+		ripopt->routeTagOrAuthenticationType = (u_int16_t)0;
 		ripopt->address=inet_addr("0.0.0.0");
 		ripopt->subnetMask=inet_addr("0.0.0.0");
 		ripopt->nextHop=inet_addr("0.0.0.0");
 		ripopt->metric=htons((u_int16_t)16);
 		break;
+	case 'r': /* set reserved field */
+		rippack->res = (u_int16_t)strtoul(arg, (char **)0, 0);
+		pack->modified |= RIP_MOD_RESERVED;
+		break;
+	default:
+	  usage_error("Unrecognized option opt");
+	  return FALSE;
 	}
 	return TRUE;
 

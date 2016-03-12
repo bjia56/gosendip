@@ -13,6 +13,8 @@
  * ChangeLog since 2.4 release:
  * 21/04/2003: fix errors found by valgrind
  * 10/06/2003: fix -tonum (pointed out by Yaniv Kaul <ykaul@checkpoint.com>)
+ * ChangeLog since 2.5 release:
+ * 02/03/2004: fix segfault in -tonum (pointed out by zamez)
  */
 
 #include <sys/types.h>
@@ -198,7 +200,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 		/* TCP OPTIONS */
 		if(!strcmp(opt+2, "num")) {
 			/* Other options (auto length) */
-			u_int8_t *data = malloc(strlen(arg)+2);
+			u_int8_t *data = malloc(strlen(arg)+3);
 			int len;
 			if(!data) {
 				fprintf(stderr,"Out of memory!\n");

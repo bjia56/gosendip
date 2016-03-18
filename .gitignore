@@ -1,0 +1,6 @@
+*.so
+*.o
+sendip
+sendip.1
+sendip.spec
+*~

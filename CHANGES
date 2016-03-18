@@ -145,3 +145,8 @@ Changes between sendip-2.5 and sendip-2.6
 - Fix -ra (thanks to sharmily.anantaraman@conexant.com)
 * udp.c
 - Fix udpv6 checksum bug (thanks to sarkarbiplab@gmail.com)
+
+Changes between sendip-2.6 and sendip-2.7
+* Move code to GitHub
+* ipv4.so and tcp.so
+- Fix signedness compile errors (Jerzy Tarasiuk <Jerzy.Tarasiuk@fuw.edu.pl>)

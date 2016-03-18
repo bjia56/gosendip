@@ -206,8 +206,8 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				fprintf(stderr,"Out of memory!\n");
 				return FALSE;
 			}
-			sprintf(data,"0x%s",arg);
-			len = compact_string(data);
+			sprintf((char*)data,"0x%s",arg);
+			len = compact_string((char*)data);
 			if(len==1)
 				addoption(*data,1,NULL,pack);
 			else
@@ -238,9 +238,9 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			int count=0;
 
 			/* count the options */
-			next=arg;
+			next=(unsigned char *)arg;
 			while(next) {
-				next=strchr(next,',');
+				next=(unsigned char *)strchr((char *)next,',');
 				count++;
 				if(next) next++;
 			}
@@ -248,10 +248,10 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			comb = malloc(count*8);
 			c = comb;
 			
-			next=arg;
+			next=(unsigned char *)arg;
 			while(*next) { 
 				/* get left edge */
-				next=strchr(arg, ':');
+				next=(unsigned char *)strchr(arg, ':');
 				if (!next) { 
 					fprintf(stderr, 
 							  "Value in tcp sack option incorrect. Usage: \n");
@@ -261,15 +261,15 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				}
 				*next++=0;
 				le=atoi(arg);
-				arg=next;
+				arg=(char *)next;
 				/* get right edge */
-				next=strchr(arg, ',');
+				next=(unsigned char *)strchr(arg, ',');
 				if (!next) 
-					next=arg-1; /* Finito - next points to \0 */ 
+					next=(unsigned char *)arg-1; /* Finito - next points to \0 */ 
 				else
 					*next++=0;
 				re=atoi(arg);
-				arg=next;
+				arg=(char *)next;
 				
 				le=htonl(le);
 				re=htonl(re);

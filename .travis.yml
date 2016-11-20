@@ -3,4 +3,4 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libc6-dev
 
-script: uname && ls -l /usr/lib*/libdl* && make veryclean all install
+script: uname && ls -l /usr/lib && make veryclean all install

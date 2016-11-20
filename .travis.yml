@@ -2,8 +2,5 @@ language: c
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libc6-dev libc6-dev-i386
-  - ls -l /usr/lib  /usr/lib32
-  - ldconfig -v
-  - echo $LD_LIBRARY_PATH
 
 script: make veryclean all install

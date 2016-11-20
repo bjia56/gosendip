@@ -1,2 +1,2 @@
 language: c
-script: uname && uname -a && make veryclean all install
+script: uname && ls -l /usr/lib*/libdl* && make veryclean all install

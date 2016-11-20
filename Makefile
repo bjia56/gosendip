@@ -32,10 +32,13 @@ all:	$(GLOBALOBJS) sendip $(PROTOS) sendip.1 sendip.spec
 #there has to be a nice way to do this
 sendip:	sendip.o	gnugetopt.o gnugetopt1.o compact.o
 	sh -c "if [ `uname` = Linux ] ; then \
+echo $(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ ; \
 $(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ ; \
 elif [ `uname` = SunOS ] ; then \
+echo $(CC) -o $@ $(LDFLAGS_SOLARIS) $(CFLAGS) $+ ;\
 $(CC) -o $@ $(LDFLAGS_SOLARIS) $(CFLAGS) $+ ;\
 else \
+echo $(CC) -o $@ $(LDFLAGS) $(CFLAGS) $+ ; \
 $(CC) -o $@ $(LDFLAGS) $(CFLAGS) $+ ; \
 fi"
 

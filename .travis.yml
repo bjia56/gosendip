@@ -2,5 +2,6 @@ language: c
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libc6-dev libc6-dev-i386
+  - sudo cp -v /usr/lib/x86_64-linux-gnu/libdl* /usr/lib/ || true
 
 script: make veryclean all install

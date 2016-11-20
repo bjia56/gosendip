@@ -1,2 +1,2 @@
 language: c
-script: make veryclean all install
+script: uname && uname -a && make veryclean all install

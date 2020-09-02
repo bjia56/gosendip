@@ -14,8 +14,10 @@ CFLAGS=	-fPIC -fsigned-char -pipe -Wall -Wpointer-arith -Wwrite-strings \
 #-Wcast-align causes problems on solaris, but not serious ones
 LDFLAGS=	-g -rdynamic -lm
 #LDFLAGS_SOLARIS= -g -lsocket -lnsl -lm
-LDFLAGS_SOLARIS= -g -lsocket -lnsl -lm -ldl
-LDFLAGS_LINUX= -g  -rdynamic -ldl -lm
+LDFLAGS_SOLARIS= -g
+LIBS_SOLARIS= -lsocket -lnsl -lm -ldl
+LDFLAGS_LINUX= -g  -rdynamic
+LIBS_LINUX= -ldl -lm
 LIBCFLAGS= -shared
 CC=	gcc
 
@@ -33,10 +35,10 @@ all:	$(GLOBALOBJS) sendip $(PROTOS) sendip.1 sendip.spec
 sendip:	sendip.o	gnugetopt.o gnugetopt1.o compact.o
 	sh -c "if [ `uname` = Linux ] ; then \
 echo $(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ ; \
-$(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ ; \
+$(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ $(LIBS_LINUX) ; \
 elif [ `uname` = SunOS ] ; then \
 echo $(CC) -o $@ $(LDFLAGS_SOLARIS) $(CFLAGS) $+ ;\
-$(CC) -o $@ $(LDFLAGS_SOLARIS) $(CFLAGS) $+ ;\
+$(CC) -o $@ $(LDFLAGS_SOLARIS) $(CFLAGS) $+ $(LIBS_SOLARIS) ;\
 else \
 echo $(CC) -o $@ $(LDFLAGS) $(CFLAGS) $+ ; \
 $(CC) -o $@ $(LDFLAGS) $(CFLAGS) $+ ; \

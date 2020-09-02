@@ -7,6 +7,7 @@
 
 #define __USE_BSD    /* GLIBC */
 #define _BSD_SOURCE  /* LIBC5 */
+#define _DEFAULT_SOURCE /* GLIBC 2.20+ */
 #include <sys/types.h>
 #include <netinet/in_systm.h>
 #include <netinet/in.h>

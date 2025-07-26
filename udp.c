@@ -19,6 +19,15 @@
 #include "ipv4.h"
 #include "ipv6.h"
 
+/* Options
+ */
+sendip_option udp_opts[] = {
+	{"s",1,"UDP source port","0"},
+	{"d",1,"UDP destination port","0"},
+	{"l",1,"UDP packet legnth","Correct"},
+	{"c",1,"UDP checksum","Correct"}
+};
+
 /* Character that identifies our options
  */
 const char udp_opt_char='u';

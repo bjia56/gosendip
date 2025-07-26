@@ -353,7 +353,7 @@ static void print_usage(void) {
 
 }
 
-int main(int argc, char *const argv[]) {
+int sendip_main(int argc, char *const argv[]) {
   int i;
 
   struct option *opts=NULL;

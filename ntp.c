@@ -13,6 +13,22 @@
 #include "sendip_module.h"
 #include "ntp.h"
 
+/* Options
+ */
+sendip_option ntp_opts[] = {
+	{"l",1,"NTP Leap Indicator","00 (no warning)"},
+	{"s",1,"NTP status","0 (clock operating OK)"},
+	{"t",1,"NTP type","0 (unspecified)"},
+	{"p",1,"NTP precision","0"},
+	{"e",1,"NTP estimated error","0.0"},
+	{"d",1,"NTP estimated drift rate","0.0"},
+	{"r",1,"NTP reference clock ID (string or IP or number)","0"},
+	{"f",1,"NTP reference timestamp","0.0"},
+	{"o",1,"NTP originate timestamp","0.0"},
+	{"a",1,"NTP arrival (receive) timestamp","0.0"},
+	{"x",1,"NTP xmit (transmit) timestamp","0.0"}
+};
+
 /* Character that identifies our options
  */
 const char ntp_opt_char='n';

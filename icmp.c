@@ -21,6 +21,14 @@
 #include "ipv4.h"
 #include "ipv6.h"
 
+/* Options
+ */
+sendip_option icmp_opts[] = {
+	{"t",1,"ICMP message type","ICMP_ECHO (8), or ICMP6_ECHO_REQUEST (128) if embedded in an IPv6 packet"},
+	{"d",1,"ICMP code","0"},
+	{"c",1,"ICMP checksum","Correct"}
+};
+
 /* Character that identifies our options
  */
 const char icmp_opt_char='c';

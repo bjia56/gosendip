@@ -14,11 +14,25 @@
 #include "sendip_module.h"
 #include "ipv6.h"
 
+/* Options
+ */
+sendip_option ipv6_opts[] = {
+	{"f",1,"IPv6 flow ID","32"},
+	{"t",1,"IPv6 traffic class","0"},
+	{"l",1,"IPv6 payload length","Correct"},
+	{"n",1,"IPv6 next header","IPPROTO_NONE"},
+	{"h",1,"IPv6 hop limit","32"},
+	{"v",1,"IP version (you probably don't want to change this"},
+	{"p",1,"IPv6 priority","0"},
+	{"s",1,"IPv6 source address","::1"},
+	{"d",1,"IPv6 destination address","Correct"}
+};
+
 /* Character that identifies our options
  */
-const char opt_char='6';
+const char ipv6_opt_char='6';
 
-sendip_data *initialize(void) {
+sendip_data *ipv6_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	ipv6_header *ipv6 = malloc(sizeof(ipv6_header));
 	memset(ipv6,0,sizeof(ipv6_header));
@@ -28,7 +42,7 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool set_addr(char *hostname, sendip_data *pack) {
+bool ipv6_set_addr(char *hostname, sendip_data *pack) {
 	ipv6_header *ipv6 = (ipv6_header *)pack->data;
 	struct hostent *host = gethostbyname2(hostname,AF_INET6);
 	if(!(pack->modified & IPV6_MOD_SRC)) {
@@ -45,7 +59,7 @@ bool set_addr(char *hostname, sendip_data *pack) {
 	return TRUE;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool ipv6_do_opt(char *opt, char *arg, sendip_data *pack) {
 	ipv6_header *hdr = (ipv6_header *)pack->data;
 	struct in6_addr addr;
 
@@ -99,8 +113,8 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
-				  sendip_data *pack) {
+bool ipv6_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+				sendip_data *pack) {
 	ipv6_header *ipv6 = (ipv6_header *)pack->data;
 
 	if(!(pack->modified&IPV6_MOD_VERSION)) {
@@ -120,12 +134,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(ipv6_opts)/sizeof(sendip_option); 
+int ipv6_num_opts(void) {
+	return sizeof(ipv6_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *ipv6_get_opts(void) {
 	return ipv6_opts;
 }
-char get_optchar() {
-	return opt_char;
+char ipv6_get_optchar(void) {
+	return ipv6_opt_char;
 }

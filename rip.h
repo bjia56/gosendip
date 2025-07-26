@@ -26,18 +26,6 @@ typedef struct {
 #define RIP_MOD_VERSION   1<<1
 #define RIP_MOD_RESERVED  1<<2
 
-/* Options
- */
-sendip_option rip_opts[] = {
-	{"v",1,"RIP version","2"},
-	{"c",1,
-	 "RIP command (1=request, 2=response, 3=traceon (obsolete), 4=traceoff (obsolete), 5=poll (undocumented), 6=poll entry (undocumented)","1"},
-	{"e",1,"Add a RIP entry.  Format is: Address family:route tag:address:subnet mask:next hop:metric","2:0:0.0.0.0:255.255.255.0:0.0.0.0:16, any option my be left out to use the default"},
-	{"a",1,"Add RIP auth entry.  Format is: AuthType:Password, AuthType may be omitted for default basic auth",NULL},
-	{"d",0,"RIP default request - get router's entire routing table; do not use any other RIP options on this RIP header",NULL},
-	{"r",1,"RIP reserved field","0"}
-};
-
 /* Helpful macros */
 #define RIP_NUM_ENTRIES(d) (((d)->alloc_len-sizeof(rip_header))/sizeof(rip_options))
 #define RIP_ADD_ENTRY(d) { (d)->data = realloc((d)->data,(d)->alloc_len+sizeof(rip_options)); (d)->alloc_len+=sizeof(rip_options); }

@@ -21,7 +21,7 @@
 
 /* Character that identifies our options
  */
-const char opt_char='u';
+const char udp_opt_char='u';
 
 static void udpcsum(sendip_data *ip_hdr, sendip_data *udp_hdr,
 						  sendip_data *data) {
@@ -69,7 +69,7 @@ static void udp6csum(sendip_data *ipv6_hdr, sendip_data *udp_hdr,
 	memcpy(&phdr.destination,&ipv6->ip6_dst,sizeof(struct in6_addr));
 	phdr.nexthdr=IPPROTO_UDP;
 	phdr.ulp_length=udp->len;
-	
+
 	memcpy(tempbuf,&phdr,sizeof(phdr));
 
 	/* Copy the UDP header and data */
@@ -81,7 +81,7 @@ static void udp6csum(sendip_data *ipv6_hdr, sendip_data *udp_hdr,
 	free(buf);
 }
 
-sendip_data *initialize(void) {
+sendip_data *udp_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	udp_header *udp = malloc(sizeof(udp_header));
 	memset(udp,0,sizeof(udp_header));
@@ -91,7 +91,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool udp_set_addr(char *hostname, sendip_data *pack) {
+	/* UDP doesn't need to set any addresses based on hostname */
+	return TRUE;
+}
+
+bool udp_do_opt(const char *opt, char *arg, sendip_data *pack) {
 	udp_header *udp = (udp_header *)pack->data;
 	switch(opt[1]) {
 	case 's':
@@ -115,10 +120,10 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool udp_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	udp_header *udp = (udp_header *)pack->data;
-	
+
 	/* Set relevant fields */
 	if(!(pack->modified&UDP_MOD_LEN)) {
 		udp->len=htons(pack->alloc_len+data->alloc_len);
@@ -154,12 +159,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(udp_opts)/sizeof(sendip_option); 
+int udp_num_opts(void) {
+	return sizeof(udp_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *udp_get_opts(void) {
 	return udp_opts;
 }
-char get_optchar() {
-	return opt_char;
+char udp_get_optchar(void) {
+	return udp_opt_char;
 }

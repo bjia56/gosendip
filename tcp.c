@@ -28,7 +28,7 @@
 
 /* Character that identifies our options
  */
-const char opt_char='t';
+const char tcp_opt_char='t';
 
 static void tcpcsum(sendip_data *ip_hdr, sendip_data *tcp_hdr,
 						  sendip_data *data) {
@@ -75,7 +75,7 @@ static void tcp6csum(sendip_data *ipv6_hdr, sendip_data *tcp_hdr,
 	memcpy(&phdr.source,&ipv6->ip6_src,sizeof(struct in6_addr));
 	memcpy(&phdr.destination,&ipv6->ip6_dst,sizeof(struct in6_addr));
 	phdr.ulp_length=IPPROTO_TCP;
-	
+
 	memcpy(tempbuf,&phdr,sizeof(phdr));
 
 	/* Copy the TCP header and data */
@@ -98,7 +98,7 @@ static void addoption(u_int8_t opt, u_int8_t len, u_int8_t *data,
 	pack->alloc_len += len;
 }
 
-sendip_data *initialize(void) {
+sendip_data *tcp_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	tcp_header *tcp = malloc(sizeof(tcp_header));
 	memset(tcp,0,sizeof(tcp_header));
@@ -108,7 +108,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool tcp_set_addr(char *hostname, sendip_data *pack) {
+	/* TCP doesn't need to set any addresses based on hostname */
+	return TRUE;
+}
+
+bool tcp_do_opt(const char *opt, char *arg, sendip_data *pack) {
 	tcp_header *tcp = (tcp_header *)pack->data;
 	// opt[0]==t
 	switch(opt[1]) {
@@ -244,18 +249,18 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				count++;
 				if(next) next++;
 			}
-			
+
 			comb = malloc(count*8);
 			c = comb;
-			
+
 			next=(unsigned char *)arg;
-			while(*next) { 
+			while(*next) {
 				/* get left edge */
 				next=(unsigned char *)strchr(arg, ':');
-				if (!next) { 
-					fprintf(stderr, 
+				if (!next) {
+					fprintf(stderr,
 							  "Value in tcp sack option incorrect. Usage: \n");
-					fprintf(stderr, 
+					fprintf(stderr,
 							  " -tosack left:right[,left:right...]\n");
 					return FALSE;
 				}
@@ -264,13 +269,13 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				arg=(char *)next;
 				/* get right edge */
 				next=(unsigned char *)strchr(arg, ',');
-				if (!next) 
-					next=(unsigned char *)arg-1; /* Finito - next points to \0 */ 
+				if (!next)
+					next=(unsigned char *)arg-1; /* Finito - next points to \0 */
 				else
 					*next++=0;
 				re=atoi(arg);
 				arg=(char *)next;
-				
+
 				le=htonl(le);
 				re=htonl(re);
 				memcpy(c, &le, 4);
@@ -284,9 +289,9 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			u_int32_t tsval=0, tsecr=0;
 			u_int8_t comb[8];
 			if (2!=sscanf(arg, "%d:%d", &tsval, &tsecr)) {
-				fprintf(stderr, 
+				fprintf(stderr,
 						  "Invalid value for tcp timestamp option.\n");
-				fprintf(stderr, 
+				fprintf(stderr,
 						  "Usage: -tots tsval:tsecr\n");
 				return FALSE;
 			}
@@ -297,12 +302,12 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			addoption(8,10,comb,pack);
 		} else {
 			/* Unrecognized -to* */
-			fprintf(stderr, "unsupported TCP Option %s val %s\n", 
+			fprintf(stderr, "unsupported TCP Option %s val %s\n",
 					  opt, arg);
 			return FALSE;
-		} 
+		}
 		break;
-		
+
 	default:
 		usage_error("unknown TCP option\n");
 		return FALSE;
@@ -314,10 +319,10 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool tcp_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	tcp_header *tcp = (tcp_header *)pack->data;
-	
+
 	/* Set relevant fields */
 	if(!(pack->modified&TCP_MOD_SEQ)) {
 		tcp->seq = (u_int32_t)rand();
@@ -357,16 +362,16 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 			return FALSE;
 		}
 	}
-	
+
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(tcp_opts)/sizeof(sendip_option); 
+int tcp_num_opts(void) {
+	return sizeof(tcp_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *tcp_get_opts(void) {
 	return tcp_opts;
 }
-char get_optchar() {
-	return opt_char;
+char tcp_get_optchar(void) {
+	return tcp_opt_char;
 }

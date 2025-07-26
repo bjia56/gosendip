@@ -20,11 +20,24 @@
 #include "sendip_module.h"
 #include "rip.h"
 
+/* Options
+ */
+sendip_option rip_opts[] = {
+	{"v",1,"RIP version","2"},
+	{"c",1,
+	 "RIP command (1=request, 2=response, 3=traceon (obsolete), 4=traceoff (obsolete), 5=poll (undocumented), 6=poll entry (undocumented)","1"},
+	{"e",1,"Add a RIP entry.  Format is: Address family:route tag:address:subnet mask:next hop:metric","2:0:0.0.0.0:255.255.255.0:0.0.0.0:16, any option my be left out to use the default"},
+	{"a",1,"Add RIP auth entry.  Format is: AuthType:Password, AuthType may be omitted for default basic auth",NULL},
+	{"d",0,"RIP default request - get router's entire routing table; do not use any other RIP options on this RIP header",NULL},
+	{"r",1,"RIP reserved field","0"}
+};
+
+
 /* Character that identifies our options
  */
-const char opt_char='r';
+const char rip_opt_char='r';
 
-sendip_data *initialize(void) {
+sendip_data *rip_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	rip_header *rip = malloc(sizeof(rip_header));
 	memset(rip,0,sizeof(rip_header));
@@ -34,7 +47,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool rip_set_addr(char *hostname, sendip_data *pack) {
+	/* RIP doesn't need to set any addresses based on hostname */
+	return TRUE;
+}
+
+bool rip_do_opt(const char *opt, char *arg, sendip_data *pack) {
 	rip_header *rippack = (rip_header *)pack->data;
 	rip_options *ripopt;
 	char *p, *q;
@@ -52,7 +70,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			usage_error("Warning: a real RIP-2 packet only has authentication as the first entry.\n");
 		}
 		RIP_ADD_ENTRY(pack);
-		ripopt = RIP_OPTION(pack);	
+		ripopt = RIP_OPTION(pack);
 		memset(ripopt,0,sizeof(rip_options));
 		ripopt->addressFamily=0xFFFF;
 		p=q=arg;
@@ -112,7 +130,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool rip_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	if(hdrs[strlen(hdrs)-1] != 'u') {
 		usage_error("Warning: RIP should be contained in a UDP packet\n");
@@ -121,12 +139,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(rip_opts)/sizeof(sendip_option); 
+int rip_num_opts(void) {
+	return sizeof(rip_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *rip_get_opts(void) {
 	return rip_opts;
 }
-char get_optchar() {
-	return opt_char;
+char rip_get_optchar(void) {
+	return rip_opt_char;
 }

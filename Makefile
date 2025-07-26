@@ -9,30 +9,29 @@ INSTALL ?= install
 #INSTALL=/usr/ucb/install
 
 CFLAGS=	-fPIC -fsigned-char -pipe -Wall -Wpointer-arith -Wwrite-strings \
-			-Wstrict-prototypes -Wnested-externs -Winline -Werror -g -Wcast-align \
-			-DSENDIP_LIBS=\"$(LIBDIR)\"
+			-Wstrict-prototypes -Wnested-externs -Winline -Werror -g -Wcast-align
 #-Wcast-align causes problems on solaris, but not serious ones
-LDFLAGS=	-g -rdynamic -lm
+LDFLAGS=	-g -lm
 #LDFLAGS_SOLARIS= -g -lsocket -lnsl -lm
 LDFLAGS_SOLARIS= -g
-LIBS_SOLARIS= -lsocket -lnsl -lm -ldl
-LDFLAGS_LINUX= -g  -rdynamic
-LIBS_LINUX= -ldl -lm
+LIBS_SOLARIS= -lsocket -lnsl -lm
+LDFLAGS_LINUX= -g
+LIBS_LINUX= -lm
 LIBCFLAGS= -shared
 CC=	gcc
 
 PROGS= sendip
-BASEPROTOS= ipv4.so ipv6.so
-IPPROTOS= icmp.so tcp.so udp.so
-UDPPROTOS= rip.so ripng.so ntp.so
-TCPPROTOS= bgp.so
-PROTOS= $(BASEPROTOS) $(IPPROTOS) $(UDPPROTOS) $(TCPPROTOS)
-GLOBALOBJS= csum.o compact.o
+BASEPROTOS_OBJ= ipv4.o ipv6.o
+IPPROTOS_OBJ= icmp.o tcp.o udp.o
+UDPPROTOS_OBJ= rip.o ripng.o ntp.o
+TCPPROTOS_OBJ= bgp.o
+PROTOOBJS= $(BASEPROTOS_OBJ) $(IPPROTOS_OBJ) $(UDPPROTOS_OBJ) $(TCPPROTOS_OBJ)
+GLOBALOBJS= csum.o compact.o modules.o
 
-all:	$(GLOBALOBJS) sendip $(PROTOS) sendip.1 sendip.spec
+all:	$(GLOBALOBJS) sendip sendip.1 sendip.spec
 
 #there has to be a nice way to do this
-sendip:	sendip.o	gnugetopt.o gnugetopt1.o compact.o
+sendip:	sendip.o gnugetopt.o gnugetopt1.o $(GLOBALOBJS) $(PROTOOBJS)
 	sh -c "if [ `uname` = Linux ] ; then \
 echo $(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ ; \
 $(CC) -o $@ $(LDFLAGS_LINUX) $(CFLAGS) $+ $(LIBS_LINUX) ; \
@@ -52,22 +51,19 @@ sendip.spec:	sendip.spec.in VERSION
 			cat VERSION >>sendip.spec
 			cat sendip.spec.in >>sendip.spec
 
-%.so: %.c $(GLOBALOBJS)
-			$(CC) -o $@ $(CFLAGS) $(LIBCFLAGS) $+
+# Removed shared object rule as we're now building static objects
 
 .PHONY:	clean install
 
 clean:
-			rm -f *.o *~ *.so $(PROTOS) $(PROGS) core gmon.out
+			rm -f *.o *~ $(PROGS) core gmon.out
 
 veryclean:
 			make clean
 			rm -f sendip.spec sendip.1
 
 install:		all
-			[ -d $(LIBDIR) ] || mkdir -p $(LIBDIR)
 			[ -d $(BINDIR) ] || mkdir -p $(BINDIR)
 			[ -d $(MANDIR) ] || mkdir -p $(MANDIR)
 			$(INSTALL) -m 755 $(PROGS) $(BINDIR)
 			$(INSTALL) -m 644 sendip.1 $(MANDIR)
-			$(INSTALL) -m 755 $(PROTOS) $(LIBDIR)

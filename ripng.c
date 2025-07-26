@@ -15,9 +15,20 @@
 #include "sendip_module.h"
 #include "ripng.h"
 
+/* Options
+ */
+sendip_option ripng_opts[] = {
+	{"v",1,"RIPng version","1"},
+	{"c",1,"RIPng command (1=request, 2=response)","1"},
+	{"r",1,"RIPng reserved field (should be 0)","0"},
+	{"e",1,"Add a RIPng entry.  Format is: Address/route tag/address/len/metric","::/0/128/1, any option my be left out to use the default"},
+	{"d",0,"RIPng default request - get router's entire routing table; do not use any other RIPng options on this RIPng header",NULL}
+};
+
+
 /* Character that identifies our options
  */
-const char opt_char='R';
+const char ripng_opt_char='R';
 
 static struct in6_addr inet6_addr(char *hostname) {
 	struct hostent *host = gethostbyname2(hostname,AF_INET6);
@@ -34,7 +45,7 @@ static struct in6_addr inet6_addr(char *hostname) {
 	return ret;
 }
 
-sendip_data *initialize(void) {
+sendip_data *ripng_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	ripng_header *rip = malloc(sizeof(ripng_header));
 	memset(rip,0,sizeof(ripng_header));
@@ -44,7 +55,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool ripng_set_addr(char *hostname, sendip_data *pack) {
+	/* RIPng doesn't need to set any addresses based on hostname */
+	return TRUE;
+}
+
+bool ripng_do_opt(const char *opt, char *arg, sendip_data *pack) {
 	ripng_header *rippack = (ripng_header *)pack->data;
 	ripng_entry *ripopt;
 	char *p, *q;
@@ -109,7 +125,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool ripng_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	if(hdrs[strlen(hdrs)-1] != 'u') {
 		usage_error("Warning: RIPng should be contained in a UDP packet\n");
@@ -118,12 +134,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(rip_opts)/sizeof(sendip_option); 
+int ripng_num_opts(void) {
+	return sizeof(ripng_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
-	return rip_opts;
+sendip_option *ripng_get_opts(void) {
+	return ripng_opts;
 }
-char get_optchar() {
-	return opt_char;
+char ripng_get_optchar(void) {
+	return ripng_opt_char;
 }

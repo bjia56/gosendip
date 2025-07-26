@@ -23,7 +23,7 @@
 
 /* Character that identifies our options
  */
-const char opt_char='c';
+const char icmp_opt_char='c';
 
 static void icmpcsum(sendip_data *icmp_hdr, sendip_data *data) {
 	icmp_header *icp = (icmp_header *)icmp_hdr->data;
@@ -62,14 +62,14 @@ static void icmp6csum(struct in6_addr *src, struct in6_addr *dst,
 	memcpy(&phdr.destination, dst, sizeof(struct in6_addr));
 	phdr.ulp_length = htonl(hdr->alloc_len+data->alloc_len);
 	phdr.nexthdr = IPPROTO_ICMPV6;
-	
+
 	memcpy(tempbuf, &phdr, sizeof(phdr));
-	
+
 	icp->check = csum(buf,sizeof(phdr)+hdr->alloc_len+data->alloc_len);
 	free(buf);
 }
 
-sendip_data *initialize(void) {
+sendip_data *icmp_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	icmp_header *icmp = malloc(sizeof(icmp_header));
 	memset(icmp,0,sizeof(icmp_header));
@@ -79,7 +79,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool icmp_set_addr(char *hostname, sendip_data *pack) {
+	/* ICMP doesn't need to set any addresses based on hostname */
+	return TRUE;
+}
+
+bool icmp_do_opt(char *opt, char *arg, sendip_data *pack) {
 	icmp_header *icp = (icmp_header *)pack->data;
 	switch(opt[1]) {
 	case 't':
@@ -99,7 +104,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool icmp_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	icmp_header *icp = (icmp_header *)pack->data;
 	int i=strlen(hdrs)-1;
@@ -118,7 +123,7 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 			headers[i]->modified |= IPV6_MOD_NXT;
 		}
 	}
-		
+
 	if(!(pack->modified&ICMP_MOD_TYPE)) {
 		if(hdrs[i]=='6') {
 			icp->type=ICMP6_ECHO_REQUEST;
@@ -142,12 +147,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(icmp_opts)/sizeof(sendip_option); 
+int icmp_num_opts(void) {
+	return sizeof(icmp_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *icmp_get_opts(void) {
 	return icmp_opts;
 }
-char get_optchar() {
-	return opt_char;
+char icmp_get_optchar(void) {
+	return icmp_opt_char;
 }

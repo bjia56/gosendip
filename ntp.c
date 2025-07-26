@@ -15,7 +15,7 @@
 
 /* Character that identifies our options
  */
-const char opt_char='n';
+const char ntp_opt_char='n';
 
 u_int32_t make_fixed_point(double n, bool issigned, int totbits, int intbits) {
 	u_int32_t intpart;
@@ -43,8 +43,8 @@ u_int32_t make_fixed_point(double n, bool issigned, int totbits, int intbits) {
 	fracpartd=floor(ldexp(modf(n,&intpartd),32));
 	intpart=(u_int32_t)intpartd;
 	fracpart=(u_int32_t)fracpartd;
- 
-	
+
+
 	if(issigned&&signbit) {
 		result=1<<totbits;
 	} else {
@@ -85,7 +85,7 @@ bool make_ts(ntp_ts *dest, char *src) {
 	return TRUE;
 }
 
-sendip_data *initialize(void) {
+sendip_data *ntp_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	ntp_header *ntp = malloc(sizeof(ntp_header));
 	memset(ntp,0,sizeof(ntp_header));
@@ -95,7 +95,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool ntp_set_addr(char *hostname, sendip_data *pack) {
+	/* NTP doesn't need to set any addresses based on hostname */
+	return TRUE;
+}
+
+bool ntp_do_opt(const char *opt, char *arg, sendip_data *pack) {
 	ntp_header *ntp = (ntp_header *)pack->data;
 	switch(opt[1]) {
 	case 'l':  /* Leap Indicator (2 bits) */
@@ -185,7 +190,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool ntp_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	if(hdrs[strlen(hdrs)-1] != 'u') {
 		usage_error("Warning: NTP should be contained in a UDP packet\n");
@@ -193,12 +198,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(ntp_opts)/sizeof(sendip_option); 
+int ntp_num_opts(void) {
+	return sizeof(ntp_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *ntp_get_opts(void) {
 	return ntp_opts;
 }
-char get_optchar() {
-	return opt_char;
+char ntp_get_optchar(void) {
+	return ntp_opt_char;
 }

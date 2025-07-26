@@ -7,6 +7,9 @@
 #ifndef _SENDIP_TYPES_H
 #define _SENDIP_TYPES_H
 
+#include <stdint.h>
+#include <endian.h>
+
 /* Make sure we have bool */
 typedef int bool;
 #ifndef FALSE
@@ -14,11 +17,12 @@ typedef int bool;
 #define FALSE (!TRUE)
 #endif
 
-/* Solaris doesn't define these */
-#ifdef __sun__
+/* Make sure we have some integer types */
 typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 typedef uint8_t  u_int8_t;
+
+#ifdef __sun__
 
 /* disable ipv6 on solaris */
 #define gethostbyname2(x,y) gethostbyname(x)

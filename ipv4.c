@@ -21,9 +21,37 @@
 #include "sendip_module.h"
 #include "ipv4.h"
 
+/* Options
+ */
+sendip_option ip_opts[] = {
+	{"s",1,"Source IP address (see README)","127.0.0.1"},
+	{"d",1,"Desitnation IP address","Correct"},
+	{"h",1,"IP header length (see README)","Correct"},
+	{"v",1,"IP version (you almost definately don't want to change this)","4"},
+	{"y",1,"IP type of service","0"},
+	{"l",1,"Total IP packet length (see README)","Correct"},
+	{"i",1,"IP packet ID (see README)","Random"},
+	{"fr",1,"IP reservced flag (see README)","0 (options are 0,1,r)"},
+	{"fd",1,"IP don't fragment flag (see README)","0 (options are 0,1,r)"},
+	{"fm",1,"IP more fragments flag (see README)","0 (options are 0,1,r)"},
+	{"f",1,"IP fragment offset","0"},
+	{"t",1,"IP time to live","255"},
+	{"p",1,"IP protcol","0, or set by underlying protocol"},
+	{"c",1,"IP checksum (see README)","Correct"},
+
+	{"onum",1,"IP option as string of hex bytes (length is always correct)","(no options)"},
+	{"oeol",0,"IP option: end of list",NULL},
+	{"onop",0,"IP option: no-op",NULL},
+	{"orr",1,"IP option: record route. Format: pointer:addr1:addr2:...",NULL},
+	{"ots",1,"IP option: timestamp. Format: pointer:overflow:flag:(ip1:)ts1:(ip2:)ts2:...",NULL},
+	{"olsr",1,"IP option: loose source route. Format: pointer:addr1:addr2:...",NULL},
+	{"osid",1,"IP option: stream identifier",NULL},
+	{"ossr",1,"IP option: strict source route. Format: pointer:addr1:addr2:...",NULL}
+};
+
 /* Character that identifies our options
  */
-const char opt_char='i';
+const char ipv4_opt_char='i';
 
 static void ipcsum(sendip_data *ip_hdr) {
 	ip_header *ip = (ip_header *)ip_hdr->data;
@@ -92,7 +120,7 @@ static void addoption(u_int8_t copy, u_int8_t class, u_int8_t num,
 	pack->alloc_len += len;
 }
 
-sendip_data *initialize(void) {
+sendip_data *ipv4_initialize(void) {
 	sendip_data *ret = malloc(sizeof(sendip_data));
 	ip_header *ip = malloc(sizeof(ip_header));
 	memset(ip,0,sizeof(ip_header));
@@ -102,12 +130,12 @@ sendip_data *initialize(void) {
 	return ret;
 }
 
-bool set_addr(char *hostname, sendip_data *pack) {
+bool ipv4_set_addr(char *hostname, sendip_data *pack) {
 	ip_header *ip = (ip_header *)pack->data;
 	struct hostent *host = gethostbyname2(hostname,AF_INET);
 	if(!(pack->modified & IP_MOD_SADDR)) {
 		ip->saddr = inet_addr("127.0.0.1");
-	} 
+	}
 	if(!(pack->modified & IP_MOD_DADDR)) {
 		if(host==NULL) return FALSE;
 		if(host->h_length != sizeof(ip->daddr)) {
@@ -119,7 +147,7 @@ bool set_addr(char *hostname, sendip_data *pack) {
 	return TRUE;
 }
 
-bool do_opt(char *opt, char *arg, sendip_data *pack) {
+bool ipv4_do_opt(const char *opt, char *arg, sendip_data *pack) {
 	ip_header *iph = (ip_header *)pack->data;
 	switch(opt[1]) {
 	case 's':
@@ -178,7 +206,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				break;
 			}
 		} else {
-			IP_SET_FRAGOFF(iph,(u_int16_t)strtoul(arg, (char **)NULL, 0) & 
+			IP_SET_FRAGOFF(iph,(u_int16_t)strtoul(arg, (char **)NULL, 0) &
 				(u_int16_t)0x1FFF);
 			pack->modified |= IP_MOD_FRAGOFF;
 			break;
@@ -282,7 +310,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 				data_in++;
 			}
 			*(data_out++)=p;
-			
+
 			/* Skip a : */
 			if(*(data_in++) != ':') {
 				fprintf(stderr,"Third char of IP timestamp must be :\n");
@@ -306,7 +334,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			}
 			*data_out=(u_int8_t)(i<<4);
 			data_in=next;
-			
+
 			/* Now get the flag and skip a : */
 			next = strchr(data_in,':');
 			if(!next) {
@@ -357,13 +385,13 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			/* End of timestamp parsing */
 
 		} else if(!strcmp(opt+2, "lsr")) {
-			/* Loose Source Route 
+			/* Loose Source Route
 			 * Format is:
 			 *  type (131, 8bit)
 			 *  length (automatic, 8bit)
 			 *  pointer (>=4, 8bit)
 			 *  ip address0 (32bit)
-			 *  ip address1 (32bit) 
+			 *  ip address1 (32bit)
 			 *  ...
 			 */
 			char *data = strdup(arg);
@@ -385,7 +413,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 			u_int16_t sid = htons(atoi(arg));
 			addoption(1,0,8,4,(u_int8_t *)&sid,pack);
 		} else if(!strcmp(opt+2, "ssr")) {
-			/* Strict Source Route 
+			/* Strict Source Route
 			 * Format is identical to loose source route
 			 */
 			char *data = strdup(arg);
@@ -417,7 +445,7 @@ bool do_opt(char *opt, char *arg, sendip_data *pack) {
 
 }
 
-bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
+bool ipv4_finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 				  sendip_data *pack) {
 	ip_header *iph = (ip_header *)pack->data;
 
@@ -447,12 +475,12 @@ bool finalize(char *hdrs, sendip_data *headers[], sendip_data *data,
 	return TRUE;
 }
 
-int num_opts() {
-	return sizeof(ip_opts)/sizeof(sendip_option); 
+int ipv4_num_opts(void) {
+	return sizeof(ip_opts)/sizeof(sendip_option);
 }
-sendip_option *get_opts() {
+sendip_option *ipv4_get_opts(void) {
 	return ip_opts;
 }
-char get_optchar() {
-	return opt_char;
+char ipv4_get_optchar(void) {
+	return ipv4_opt_char;
 }
